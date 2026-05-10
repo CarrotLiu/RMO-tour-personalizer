@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Image Editor with p5.js</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/p5.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; text-align: center; }
+    #buttons { margin-top: 10px; }
+    button { margin: 5px; }
+    canvas { border: 1px solid #333; }
+  </style>
+</head>
+<body>
+
+<h1>Image Editing Website</h1>
+
+<input type="file" id="imgUploader">
+<button id="cutBtn">Cut Image into 9 Squares</button>
+
+<div id="buttons">
+  <button id="drawBtn">Draw</button>
+  <button id="monoBtn">Mono</button>
+  <button id="textBtn">Add Text</button>
+  <button id="aiBtn">AI Highlight</button>
+</div>
+
+<script>
+let img;
+let squares = [];
+let squareImages = [];
+let selectedSquare = -1;
+let editingMode = "";
+let drawColor = '#ff0000';
+let drawing = false;
+let tempGraphics;
+
+function setup() {
+  createCanvas(600, 600).parent(document.body);
+  background(220);
+
+  document.getElementById('imgUploader').addEventListener('change', (e) => {
+    let file = e.target.files[0];
+    if (file) {
+      img = loadImage(URL.createObjectURL(file), () => {
+        image(img, 0, 0, width, height);
+      });
+    }
+  });
+
+  document.getElementById('cutBtn').addEventListener('click', () => {
+    if (!img) return alert("Please upload an image first!");
+    cutImage();
+  });
+
+  document.getElementById('drawBtn').addEventListener('click', () => editingMode = 'draw');
+  document.getElementById('monoBtn').addEventListener('click', () => applyMono());
+  document.getElementById('textBtn').addEventListener('click', () => {
+    let msg = prompt("Enter text to add:");
+    if (msg) addText(msg);
+  });
+  document.getElementById('aiBtn').addEventListener('click', () => aiHighlight());
+}
+
+function draw() {
+  background(220);
+
+  if (selectedSquare === -1) {
+    if (img) image(img, 0, 0, width, height);
+    for (let i = 0; i < squares.length; i++) {
+      let sq = squares[i];
+      stroke('white');
+      noFill();
+      rect(sq.x, sq.y, sq.w, sq.h);
+    }
+  } else {
+    if (tempGraphics) image(tempGraphics, 0, 0, width, height);
+  }
+
+  if (editingMode === 'draw' && drawing && selectedSquare >= 0) {
+    tempGraphics.stroke(drawColor);
+    tempGraphics.strokeWeight(3);
+    tempGraphics.line(pmouseX, pmouseY, mouseX, mouseY);
+  }
+}
+
+function mousePressed() {
+  if (selectedSquare === -1) {
+    for (let i = 0; i < squares.length; i++) {
+      let sq = squares[i];
+      if (mouseX > sq.x && mouseX < sq.x + sq.w && mouseY > sq.y && mouseY < sq.y + sq.h) {
+        selectedSquare = i;
+        tempGraphics = createGraphics(width, height);
+        tempGraphics.image(squareImages[i], 0, 0, width, height);
+        break;
+      }
+    }
+  }
+
+  if (editingMode === 'draw' && selectedSquare >= 0) drawing = true;
+}
+
+function mouseReleased() {
+  drawing = false;
+}
+
+function cutImage() {
+  squares = [];
+  squareImages = [];
+  let w = width / 3;
+  let h = height / 3;
+  for (let i = 0; i < 3; i++) {
+    for (let j = 0; j < 3; j++) {
+      squares.push({ x: i * w, y: j * h, w: w, h: h });
+      let sqImg = createGraphics(w, h);
+      sqImg.image(img, -i * w, -j * h, width, height);
+      squareImages.push(sqImg);
+    }
+  }
+  selectedSquare = -1;
+}
+
+function applyMono() {
+  if (selectedSquare < 0) return alert("Select a square first!");
+  tempGraphics.loadPixels();
+  for (let y = 0; y < tempGraphics.height; y++) {
+    for (let x = 0; x < tempGraphics.width; x++) {
+      let index = (y * tempGraphics.width + x) * 4;
+      let r = tempGraphics.pixels[index];
+      let g = tempGraphics.pixels[index + 1];
+      let b = tempGraphics.pixels[index + 2];
+      let gray = (r + g + b) / 3;
+      tempGraphics.pixels[index] = gray;
+      tempGraphics.pixels[index + 1] = gray;
+      tempGraphics.pixels[index + 2] = gray;
+    }
+  }
+  tempGraphics.updatePixels();
+}
+
+function addText(msg) {
+  if (selectedSquare < 0) return alert("Select a square first!");
+  tempGraphics.fill('black');
+  tempGraphics.textSize(40);
+  tempGraphics.textAlign(CENTER, CENTER);
+  tempGraphics.text(msg, tempGraphics.width / 2, tempGraphics.height / 2);
+}
+
+function aiHighlight() {
+  if (selectedSquare < 0) return alert("Select a square first!");
+  tempGraphics.fill('red');
+  tempGraphics.textSize(30);
+  tempGraphics.textAlign(CENTER, BOTTOM);
+  tempGraphics.text("look at the crack, is it a bone?", tempGraphics.width / 2, tempGraphics.height - 20);
+}
+</script>
+
+</body>
+</html>

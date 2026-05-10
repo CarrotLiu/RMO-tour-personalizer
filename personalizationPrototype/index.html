@@ -1,0 +1,1137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+<title>RMO Personalized Treasure Hunt</title>
+<style>
+/* ===== Reset & Base ===== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background: #1A1A2E; color: #2D2D2D;
+  display: flex; justify-content: center; align-items: flex-start;
+  min-height: 100vh; padding: 16px;
+}
+#app {
+  width: 100%; max-width: 420px;
+  display: flex; flex-direction: column; gap: 0;
+}
+.page { display: none; }
+.page.active { display: block; }
+
+/* ===== Card ===== */
+.card {
+  background: #fff; border-radius: 16px; padding: 28px 24px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.25);
+}
+
+/* ===== Typography ===== */
+h1 { font-size: 22px; font-weight: 700; color: #1A1A2E; margin-bottom: 8px; }
+h2 { font-size: 20px; font-weight: 700; color: #1A1A2E; margin-bottom: 12px; }
+h3 { font-size: 16px; font-weight: 600; color: #1A1A2E; margin-bottom: 8px; }
+p { font-size: 15px; line-height: 1.55; color: #444; margin-bottom: 12px; }
+.subtle { font-size: 13px; color: #888; }
+
+/* ===== Buttons ===== */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: 12px 24px; border: none; border-radius: 28px;
+  font-size: 16px; font-weight: 600; cursor: pointer;
+  transition: background 0.2s, color 0.2s, opacity 0.2s;
+}
+.btn-primary { background: #1A1A2E; color: #fff; }
+.btn-primary:hover { background: #2D2D44; }
+.btn-primary:disabled { background: #ccc; color: #999; cursor: not-allowed; }
+.btn-secondary { background: #e8e8e8; color: #444; }
+.btn-secondary:hover { background: #ddd; }
+.btn-gold { background: #C9A96E; color: #fff; }
+.btn-gold:hover { background: #b8944f; }
+
+.btn-row { display: flex; gap: 12px; margin-top: 20px; }
+.btn-row.between { justify-content: space-between; }
+.btn-row.right { justify-content: flex-end; }
+
+/* ===== Progress Bar ===== */
+.progress-wrap { margin-bottom: 20px; }
+.progress-label { font-size: 13px; color: #888; margin-bottom: 6px; }
+.progress-bar { height: 6px; background: #e8e8e8; border-radius: 3px; overflow: hidden; }
+.progress-fill { height: 100%; background: #C9A96E; border-radius: 3px; transition: width 0.3s; }
+
+/* ===== Pre-survey ===== */
+.pre-option { display: block; width: 100%; padding: 14px 18px; margin-bottom: 10px;
+  border: 2px solid #e8e8e8; border-radius: 12px; background: #fff;
+  font-size: 15px; text-align: left; cursor: pointer; transition: border-color 0.2s, background 0.2s; }
+.pre-option:hover { border-color: #C9A96E; }
+.pre-option.selected { border-color: #C9A96E; background: #FBF7F0; }
+
+/* ===== Sentence Builder ===== */
+.sentence-display {
+  background: #F8F6F2; border-radius: 12px; padding: 20px 16px;
+  margin-bottom: 20px; min-height: 120px;
+  font-size: 16px; line-height: 1.8; color: #1A1A2E;
+}
+.sentence-display .fixed { color: #1A1A2E; }
+.sentence-display .blank {
+  display: inline-block; min-width: 80px; min-height: 28px;
+  border-bottom: 2px dashed #C9A96E; padding: 2px 6px; margin: 0 2px;
+  vertical-align: bottom; transition: background 0.2s;
+}
+.sentence-display .blank.drag-over { background: #F0EAD6; }
+.sentence-display .blank .chip {
+  display: inline-block; background: #2E7D32; color: #fff;
+  border-radius: 14px; padding: 2px 10px; margin: 1px 3px;
+  font-size: 14px; cursor: pointer; transition: opacity 0.15s;
+}
+.sentence-display .blank .chip:hover { opacity: 0.8; }
+.sentence-display .blank .hint {
+  color: #aaa; font-style: italic; font-size: 14px;
+}
+.sentence-display .blank.filled .hint { display: none; }
+
+.word-pool {
+  display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px;
+}
+.word-chip {
+  display: inline-block; padding: 10px 18px;
+  border: 2px solid #ddd; border-radius: 24px;
+  background: #fff; color: #2D2D2D; font-size: 14px;
+  cursor: grab; user-select: none;
+  transition: border-color 0.2s, box-shadow 0.2s, opacity 0.2s;
+}
+.word-chip:hover { border-color: #C9A96E; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+.word-chip:active { cursor: grabbing; }
+.word-chip.dragging { opacity: 0.4; }
+.word-chip.used { opacity: 0.35; pointer-events: none; }
+
+.step-indicator {
+  font-size: 13px; color: #888; margin-bottom: 12px;
+}
+
+/* ===== Word Cloud ===== */
+.category-section { margin-bottom: 20px; }
+.category-title {
+  font-size: 13px; font-weight: 600; color: #888;
+  text-transform: uppercase; letter-spacing: 0.5px;
+  margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #eee;
+}
+.cloud-grid {
+  display: flex; flex-wrap: wrap; gap: 10px;
+}
+.cloud-chip {
+  display: inline-block; padding: 10px 18px;
+  border: 2px solid #ddd; border-radius: 24px;
+  background: #fff; color: #2D2D2D; font-size: 14px;
+  cursor: pointer; user-select: none;
+  transition: all 0.2s;
+}
+.cloud-chip:hover { border-color: #C9A96E; }
+.cloud-chip.selected { border-color: #C9A96E; background: #FBF7F0; color: #1A1A2E; font-weight: 600; }
+
+/* ===== Questionnaire ===== */
+.q-option {
+  display: block; width: 100%; padding: 14px 18px; margin-bottom: 10px;
+  border: 2px solid #e8e8e8; border-radius: 12px; background: #fff;
+  font-size: 15px; text-align: left; cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+}
+.q-option:hover { border-color: #C9A96E; }
+.q-option.selected { border-color: #C9A96E; background: #FBF7F0; }
+
+/* ===== Scale Bar ===== */
+.scale-bar { display: flex; gap: 16px; justify-content: center; margin: 20px 0; }
+.scale-dot {
+  width: 44px; height: 44px; border-radius: 50%;
+  border: 2px solid #ddd; background: #fff;
+  font-size: 16px; font-weight: 600; color: #888;
+  cursor: pointer; transition: all 0.2s;
+  display: flex; align-items: center; justify-content: center;
+}
+.scale-dot:hover { border-color: #C9A96E; }
+.scale-dot.selected { background: #C9A96E; border-color: #C9A96E; color: #fff; }
+.scale-labels { display: flex; justify-content: space-between; font-size: 11px; color: #888; margin-top: 4px; }
+.scale-labels span { max-width: 70px; text-align: center; }
+
+.survey-q { margin-bottom: 28px; }
+
+/* ===== Final Choice ===== */
+.choice-card {
+  display: block; width: 100%; padding: 20px 18px; margin-bottom: 12px;
+  border: 2px solid #e8e8e8; border-radius: 14px; background: #fff;
+  font-size: 16px; font-weight: 600; text-align: center; cursor: pointer;
+  transition: all 0.2s;
+}
+.choice-card:hover { border-color: #C9A96E; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+.choice-card.selected { border-color: #C9A96E; background: #FBF7F0; }
+
+/* ===== Result ===== */
+.result-box { text-align: center; padding: 40px 20px; }
+.result-icon { font-size: 56px; margin-bottom: 16px; }
+
+/* ===== Thank You ===== */
+.thankyou-box { text-align: center; padding: 32px 20px; }
+.export-btn { margin-top: 16px; }
+</style>
+</head>
+<body>
+<div id="app">
+  <!-- All pages rendered here dynamically -->
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<script>
+// ===================================================================
+// FIREBASE CONFIG — replace with your own project settings
+// 1. Go to https://console.firebase.google.com/
+// 2. Create a project → Realtime Database → Create Database (test mode)
+// 3. Copy the config from Project Settings → General → Your apps → Web app
+// ===================================================================
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyBxQrgkmqN4jASpyNjoqnS0uPvvfvf5Ido",
+  authDomain: "rmo-prototype-1.firebaseapp.com",
+  databaseURL: "https://rmo-prototype-1-default-rtdb.firebaseio.com",
+  projectId: "rmo-prototype-1",
+  storageBucket: "rmo-prototype-1.firebasestorage.app",
+  messagingSenderId: "863881805699",
+  appId: "1:863881805699:web:7f7c238649c02ca21680b6"
+};
+
+// ===================================================================
+// UUID generator (no external dependency, RFC 4122 v4)
+// ===================================================================
+function generateUUID() {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+    const r = Math.random() * 16 | 0;
+    return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+  });
+}
+
+// ===================================================================
+// Get or create persistent session user ID (survives page refresh)
+// ===================================================================
+function getUserId() {
+  let uid = sessionStorage.getItem('rmo_test_uid');
+  if (!uid) {
+    uid = generateUUID();
+    sessionStorage.setItem('rmo_test_uid', uid);
+  }
+  return uid;
+}
+
+// ===================================================================
+// Initialize Firebase
+// ===================================================================
+let db = null;
+let firebaseReady = false;
+
+function initFirebase() {
+  try {
+    if (typeof firebase === 'undefined') {
+      console.warn('Firebase SDK not loaded. Results will be saved to console only.');
+      return;
+    }
+    if (FIREBASE_CONFIG.apiKey === 'YOUR_API_KEY') {
+      console.warn('Firebase not configured. Copy your Firebase config into FIREBASE_CONFIG. Results saved to console only.');
+      return;
+    }
+    firebase.initializeApp(FIREBASE_CONFIG);
+    db = firebase.database();
+    firebaseReady = true;
+    console.log('Firebase connected. User ID:', getUserId());
+  } catch (e) {
+    console.error('Firebase init failed:', e.message);
+  }
+}
+
+initFirebase();
+
+// ===================================================================
+// Save results to Firebase under /results/{userId}/{timestamp}
+// ===================================================================
+function saveToFirebase(data) {
+  if (!firebaseReady || !db) {
+    console.log('Firebase not available. Data in console only.');
+    return;
+  }
+  const userId = getUserId();
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const ref = db.ref('results').child(userId).child(timestamp);
+  ref.set(data)
+    .then(() => console.log('Saved to Firebase:', userId, timestamp))
+    .catch(err => console.error('Firebase save failed:', err.message));
+}
+
+// ===================================================================
+// STATE MACHINE
+// ===================================================================
+const STATE = {
+  WELCOME: 'welcome',
+  PRE_SURVEY: 'preSurvey',
+  INTERACTION_INTRO: 'intro',
+  SENTENCE_BUILDER: 'sentenceBuilder',
+  WORD_CLOUD: 'wordCloud',
+  QUESTIONNAIRE: 'questionnaire',
+  RESULT: 'result',
+  POST_SURVEY: 'postSurvey',
+  FINAL_CHOICE: 'finalChoice',
+  THANK_YOU: 'thankYou'
+};
+
+const INTERACTIONS = [
+  { type: 'sentence-builder', name: 'Sentence Builder', state: STATE.SENTENCE_BUILDER },
+  { type: 'word-cloud', name: 'Word Cloud', state: STATE.WORD_CLOUD },
+  { type: 'questionnaire', name: 'Traditional Questionnaire', state: STATE.QUESTIONNAIRE }
+];
+
+let interactionOrder = [];    // randomized indices [0,1,2]
+let currentIx = 0;            // index into interactionOrder (0-2)
+let allResults = [];          // collected per-interaction data
+let preSurveyAnswer = null;
+let preSurveyNested = null;
+let finalChoice = null;
+
+// Per-interaction transient state
+let surveyAnswers = [];       // [q1,q2,q3,q4] for current post-survey
+let surveyQIndex = 0;         // current question in post-survey
+
+// Fisher-Yates shuffle
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+// Navigation stack for Back
+let navStack = [];
+
+function navigateTo(state, extra) {
+  navStack.push({ state, extra });
+  renderPage(state, extra);
+}
+
+function goBack() {
+  if (navStack.length <= 1) return;
+  navStack.pop(); // discard current
+  const prev = navStack[navStack.length - 1];
+  renderPage(prev.state, prev.extra);
+}
+
+function renderPage(state, extra) {
+  const app = document.getElementById('app');
+  app.innerHTML = '';
+
+  switch (state) {
+    case STATE.WELCOME: renderWelcome(app); break;
+    case STATE.PRE_SURVEY: renderPreSurvey(app); break;
+    case STATE.INTERACTION_INTRO: renderInteractionIntro(app, extra); break;
+    case STATE.SENTENCE_BUILDER: renderSentenceBuilder(app, extra); break;
+    case STATE.WORD_CLOUD: renderWordCloud(app, extra); break;
+    case STATE.QUESTIONNAIRE: renderQuestionnaire(app, extra); break;
+    case STATE.RESULT: renderResult(app, extra); break;
+    case STATE.POST_SURVEY: renderPostSurvey(app, extra); break;
+    case STATE.FINAL_CHOICE: renderFinalChoice(app); break;
+    case STATE.THANK_YOU: renderThankYou(app); break;
+  }
+}
+
+// ===================================================================
+// UTILITY: Progress bar
+// ===================================================================
+function renderProgress(current, total, label) {
+  const pct = Math.round((current / total) * 100);
+  return `
+    <div class="progress-wrap">
+      <div class="progress-label">${label} (${current}/${total})</div>
+      <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+    </div>`;
+}
+
+// ===================================================================
+// 1. WELCOME PAGE
+// ===================================================================
+function renderWelcome(app) {
+  app.innerHTML = `
+    <div class="card">
+      <h1>RMO Personalized Treasure Hunt</h1>
+      <p>
+        Rijksmuseum van Oudheden (RMO) is a leading Dutch museum dedicated to ancient civilizations,
+        hosting permanent exhibitions that feature the culture of Egypt, the Ancient Middle East,
+        Greece, Rome, and early Dutch history.
+      </p>
+      <p>
+        This application will turn your visit to RMO into a <strong>personalized treasure hunt</strong>
+        experience and help you appreciate an exhibit in a way you like.
+      </p>
+      <p>
+        You will go through <strong>3 different personalizing processes</strong>, each lasting 2–3 minutes.
+        After each process, you will be asked to fill out a short survey about your experience.
+        After all three processes are completed, you will be asked to choose your favourite.
+      </p>
+      <p class="subtle">This test will last less than 15 mins in total.<br>Thank you for your contribution to this project.</p>
+      <div class="btn-row right">
+        <button class="btn btn-gold" onclick="startTest()">Start</button>
+      </div>
+    </div>`;
+}
+
+function startTest() {
+  interactionOrder = shuffle([0, 1, 2]);
+  currentIx = 0;
+  allResults = [];
+  navStack = [];
+  navigateTo(STATE.PRE_SURVEY);
+}
+
+// ===================================================================
+// 2. PRE-SURVEY
+// ===================================================================
+function renderPreSurvey(app) {
+  preSurveyAnswer = null;
+  preSurveyNested = null;
+  app.innerHTML = `
+    <div class="card">
+      ${renderProgress(0, 3, 'Pre-survey')}
+      <h2>Pre-visit Survey</h2>
+      <div id="preSurveyQ1">
+        <p style="margin-bottom:14px;"><strong>Have you visited RMO before?</strong></p>
+        <button class="pre-option" data-val="yes" onclick="selectPreSurvey('yes', this)">Yes</button>
+        <button class="pre-option" data-val="no"  onclick="selectPreSurvey('no', this)">No</button>
+      </div>
+      <div id="preSurveyNested" style="display:none; margin-top:16px;">
+        <p style="margin-bottom:14px;"><strong>Have you visited the Archeology of the Netherlands?</strong></p>
+        <button class="pre-option" data-val="yes" onclick="selectPreNested('yes', this)">Yes</button>
+        <button class="pre-option" data-val="no"  onclick="selectPreNested('no', this)">No</button>
+        <button class="pre-option" data-val="not-sure" onclick="selectPreNested('not-sure', this)">Not sure</button>
+      </div>
+      <div class="btn-row right">
+        <button class="btn btn-primary" id="preSurveyContinue" disabled onclick="finishPreSurvey()">Continue</button>
+      </div>
+    </div>`;
+}
+
+function selectPreSurvey(val, el) {
+  preSurveyAnswer = val;
+  document.querySelectorAll('#preSurveyQ1 .pre-option').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+
+  const nested = document.getElementById('preSurveyNested');
+  if (val === 'yes') {
+    nested.style.display = 'block';
+    preSurveyNested = null;
+    document.querySelectorAll('#preSurveyNested .pre-option').forEach(b => b.classList.remove('selected'));
+    document.getElementById('preSurveyContinue').disabled = true;
+  } else {
+    nested.style.display = 'none';
+    preSurveyNested = null;
+    document.getElementById('preSurveyContinue').disabled = false;
+  }
+}
+
+function selectPreNested(val, el) {
+  preSurveyNested = val;
+  document.querySelectorAll('#preSurveyNested .pre-option').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+  document.getElementById('preSurveyContinue').disabled = false;
+}
+
+function finishPreSurvey() {
+  if (!preSurveyAnswer) return;
+  if (preSurveyAnswer === 'yes' && !preSurveyNested) return;
+  startNextInteraction();
+}
+
+// ===================================================================
+// INTERACTION ORCHESTRATION
+// ===================================================================
+function startNextInteraction() {
+  if (currentIx >= 3) {
+    navigateTo(STATE.FINAL_CHOICE);
+    return;
+  }
+  const interaction = INTERACTIONS[interactionOrder[currentIx]];
+  navigateTo(STATE.INTERACTION_INTRO, { interaction, ix: currentIx });
+}
+
+function advanceAfterInteraction() {
+  currentIx++;
+  startNextInteraction();
+}
+
+// ===================================================================
+// 3. INTERACTION INTRO
+// ===================================================================
+const INTRO_TEXTS = {
+  'sentence-builder': 'Please complete the sentence by selecting phrases that you feel most relate to how you want to plan your trip in RMO. We will personalize your trip according to your selection. You can select multiple phrases at the same time. Press "Continue" for the next step, press "Back" to revise your answer.',
+  'word-cloud': 'Please select the phrases regarding the museum trip in RMO that interest you most. We will personalize your trip according to your selection. You can select multiple phrases at the same time. Press "Continue" for the next step, press "Back" to revise your answer.',
+  'questionnaire': 'Please fill out this survey regarding the museum trip in RMO. You can select multiple options at the same time. We will personalize your trip according to your selection. Press "Continue" for the next step, press "Back" to revise your answer.'
+};
+
+function renderInteractionIntro(app, extra) {
+  const { interaction, ix } = extra;
+  app.innerHTML = `
+    <div class="card">
+      ${renderProgress(ix + 1, 3, 'Interaction')}
+      <h2>${interaction.name}</h2>
+      <p>${INTRO_TEXTS[interaction.type]}</p>
+      <div class="btn-row right">
+        <button class="btn btn-gold" onclick="navigateTo('${interaction.state}', { ix: ${ix} })">Start</button>
+      </div>
+    </div>`;
+}
+
+// ===================================================================
+// 4. SENTENCE BUILDER (Drag & Drop)
+// ===================================================================
+const SENTENCE_STEPS = [
+  {
+    fixedBefore: 'I want to ',
+    hint: 'choose how you prefer to visit',
+    fixedAfter: ' Dutch pre-histories,',
+    words: [
+      'freely explore',
+      'unexpectedly encounter surprises in',
+      'quickly find highlights in',
+      'seriously learn knowledge about',
+      'peacefully relax in'
+    ],
+    multipleChoice: true,
+    id: 'visitStyle'
+  },
+  {
+    fixedBefore: '',
+    hint: 'choose cultural aspects that interest you',
+    fixedAfter: '',
+    words: [
+      'economy', 'politics', 'funeral', 'farming',
+      'food culture', 'fashion', 'arts', 'no preference'
+    ],
+    multipleChoice: true,
+    id: 'aspects'
+  },
+  {
+    fixedBefore: ' by ',
+    hint: 'choose how you prefer to absorb knowledge',
+    fixedAfter: '.',
+    words: [
+      'reading an interesting story',
+      'reading a Wiki with concise, important facts',
+      'observing details of the artifacts'
+    ],
+    multipleChoice: true,
+    id: 'absorbStyle'
+  }
+];
+
+let sbStepIndex = 0;
+let sbSelections = [[], [], []];
+
+function initSentenceBuilder() {
+  sbStepIndex = 0;
+  sbSelections = [[], [], []];
+}
+
+function renderSentenceBuilder(app, extra) {
+  const ix = extra ? extra.ix : currentIx;
+  if (navStack.length <= 1 || navStack[navStack.length - 1].state !== STATE.SENTENCE_BUILDER) {
+    initSentenceBuilder();
+  }
+
+  const step = SENTENCE_STEPS[sbStepIndex];
+  const selected = sbSelections[sbStepIndex] || [];
+  const hasSelection = selected.length > 0;
+
+  // Build display sentence — only show up to and including the current step
+  let sel0 = (sbSelections[0] || []).join(' and ');
+  let sel1 = (sbSelections[1] || []).join(' and ');
+  let sel2 = (sbSelections[2] || []).join(' and ');
+
+  if (sel0 === '') sel0 = null;
+  if (sel1 === '') sel1 = null;
+  if (sel2 === '') sel2 = null;
+
+  const aspectsHasNoPref = sbSelections[1] && sbSelections[1].includes('no preference');
+
+  let displayHTML = '';
+
+  // Step 0: I want to [blank] Dutch pre-histories
+  displayHTML += '<span class="fixed">I want to </span>';
+  if (sel0) {
+    displayHTML += `<span class="blank filled" data-blank="0">${renderBlankChips(sel0, 0)}</span>`;
+  } else {
+    displayHTML += `<span class="blank" data-blank="0" id="dropZone0"><span class="hint">${SENTENCE_STEPS[0].hint}</span></span>`;
+  }
+  displayHTML += '<span class="fixed"> Dutch pre-histories</span>';
+
+  // Step 1: , especially regarding [blank]  (only show if step >= 1 and not no-pref)
+  if (sbStepIndex >= 1 && !aspectsHasNoPref) {
+    displayHTML += '<span class="fixed">, especially regarding </span>';
+    if (sel1) {
+      displayHTML += `<span class="blank filled" data-blank="1">${renderBlankChips(sel1, 1)}</span>`;
+    } else {
+      displayHTML += `<span class="blank" data-blank="1" id="dropZone1"><span class="hint">${SENTENCE_STEPS[1].hint}</span></span>`;
+    }
+  }
+
+  // Step 2: by [blank].  (only show if step >= 2, or earlier step completed with no-pref)
+  if (sbStepIndex >= 2 || (sbStepIndex >= 1 && aspectsHasNoPref)) {
+    displayHTML += '<span class="fixed"> by </span>';
+    if (sel2) {
+      displayHTML += `<span class="blank filled" data-blank="2">${renderBlankChips(sel2, 2)}</span>`;
+    } else {
+      displayHTML += `<span class="blank" data-blank="2" id="dropZone2"><span class="hint">${SENTENCE_STEPS[2].hint}</span></span>`;
+    }
+    displayHTML += '<span class="fixed">.</span>';
+  }
+
+  const usedWords = new Set(selected);
+
+  // Check if we should show Finish or Continue
+  const isLastStep = sbStepIndex >= 2 ||
+    (sbStepIndex === 1 && aspectsHasNoPref);
+  const buttonLabel = isLastStep ? 'Finish' : 'Continue';
+
+  app.innerHTML = `
+    <div class="card">
+      ${renderProgress(extra.ix + 1, 3, 'Interaction')}
+      <h2>Sentence Builder</h2>
+      <div class="step-indicator">Step ${Math.min(sbStepIndex + 1, aspectsHasNoPref ? 2 : 3)} of ${aspectsHasNoPref ? 2 : 3}</div>
+      <div class="sentence-display">${displayHTML}</div>
+      <p class="subtle" style="margin-bottom:8px;">Drag words into the underlined blank above:</p>
+      <div class="word-pool" id="wordPool">
+        ${step.words.map(w => {
+          const isUsed = usedWords.has(w);
+          return `<span class="word-chip${isUsed ? ' used' : ''}" draggable="${!isUsed}" data-word="${escapeHTML(w)}" ondragstart="dragStart(event)" ondragend="dragEnd(event)">${escapeHTML(w)}</span>`;
+        }).join('')}
+      </div>
+      <div class="btn-row between">
+        <button class="btn btn-secondary" onclick="sbGoBack()">Back</button>
+        <button class="btn btn-primary" id="sbContinue" ${hasSelection ? '' : 'disabled'} onclick="sbContinue()">${buttonLabel}</button>
+      </div>
+    </div>`;
+
+  // Set up drop zones
+  setupDropZones();
+}
+
+function escapeHTML(str) {
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function renderBlankChips(selStr, blankIdx) {
+  if (!selStr) return '';
+  const words = selStr.split(' and ');
+  return words.map(w => `<span class="chip" data-blank="${blankIdx}" data-word="${escapeHTML(w)}" onclick="removeFromBlank(${blankIdx}, '${escapeHTML(w).replace(/'/g, "&#39;")}')">${escapeHTML(w)}</span>`).join('');
+}
+
+function setupDropZones() {
+  const blanks = document.querySelectorAll('.blank:not(.filled)');
+  blanks.forEach(blank => {
+    blank.addEventListener('dragover', e => { e.preventDefault(); blank.classList.add('drag-over'); });
+    blank.addEventListener('dragleave', () => { blank.classList.remove('drag-over'); });
+    blank.addEventListener('drop', e => {
+      e.preventDefault();
+      blank.classList.remove('drag-over');
+      const word = e.dataTransfer.getData('text/plain');
+      if (word) dropWordOnBlank(blank.dataset.blank, word);
+    });
+  });
+
+  // Also allow dropping on filled blanks
+  const filledBlanks = document.querySelectorAll('.blank.filled');
+  filledBlanks.forEach(blank => {
+    blank.addEventListener('dragover', e => { e.preventDefault(); blank.classList.add('drag-over'); });
+    blank.addEventListener('dragleave', () => { blank.classList.remove('drag-over'); });
+    blank.addEventListener('drop', e => {
+      e.preventDefault();
+      blank.classList.remove('drag-over');
+      const word = e.dataTransfer.getData('text/plain');
+      if (word) dropWordOnBlank(blank.dataset.blank, word);
+    });
+  });
+}
+
+function dragStart(e) {
+  const word = e.target.dataset.word;
+  e.dataTransfer.setData('text/plain', word);
+  e.dataTransfer.effectAllowed = 'move';
+  e.target.classList.add('dragging');
+}
+
+function dragEnd(e) {
+  e.target.classList.remove('dragging');
+}
+
+function dropWordOnBlank(blankIdx, word) {
+  const idx = parseInt(blankIdx);
+  const step = SENTENCE_STEPS[idx];
+  const selected = sbSelections[idx];
+
+  if (selected.includes(word)) return;
+
+  // For single-choice steps, clear previous selection
+  if (!step.multipleChoice) {
+    sbSelections[idx] = [word];
+  } else {
+    // If "no preference" selected, clear other selections
+    if (word === 'no preference') {
+      sbSelections[idx] = ['no preference'];
+    } else {
+      // Remove "no preference" if other word selected
+      sbSelections[idx] = selected.filter(w => w !== 'no preference');
+      sbSelections[idx].push(word);
+    }
+  }
+
+  renderSentenceBuilder(document.getElementById('app'), { ix: currentIx });
+}
+
+function removeFromBlank(blankIdx, word) {
+  const idx = parseInt(blankIdx);
+  sbSelections[idx] = sbSelections[idx].filter(w => w !== word);
+  renderSentenceBuilder(document.getElementById('app'), { ix: currentIx });
+}
+
+function sbGoBack() {
+  if (sbStepIndex > 0) {
+    sbStepIndex--;
+    renderSentenceBuilder(document.getElementById('app'), { ix: currentIx });
+  } else {
+    // Go back to intro
+    const interaction = INTERACTIONS[interactionOrder[currentIx]];
+    navStack.pop();
+    initSentenceBuilder();
+    navigateTo(STATE.INTERACTION_INTRO, { interaction, ix: currentIx });
+  }
+}
+
+function sbContinue() {
+  const selected = sbSelections[sbStepIndex];
+  if (selected.length === 0) return;
+
+  const aspectsHasNoPref = sbSelections[1] && sbSelections[1].includes('no preference');
+
+  // If step 1 and "no preference" selected in aspects, skip step 2
+  if (sbStepIndex === 1 && aspectsHasNoPref) {
+    sbStepIndex = 2; // Skip to step 3
+  } else if (sbStepIndex < 2) {
+    sbStepIndex++;
+  }
+
+  // Check if done
+  const done =
+    sbStepIndex >= 2 ||
+    (sbStepIndex === 1 && aspectsHasNoPref);
+
+  if (done && sbStepIndex <= 2) {
+    // Check if current step has selections; if not, just show it
+    if (sbSelections[sbStepIndex] && sbSelections[sbStepIndex].length === 0 && sbStepIndex <= 2) {
+      // Still need to fill current step
+      renderSentenceBuilder(document.getElementById('app'), { ix: currentIx });
+      return;
+    }
+  }
+
+  if (sbStepIndex >= 2 && sbSelections[2].length > 0) {
+    // All done
+    finishSentenceBuilder();
+  } else if (sbStepIndex >= 2 && sbSelections[1] && sbSelections[1].includes('no preference') && sbSelections[2].length === 0) {
+    // Need to fill step 3
+    renderSentenceBuilder(document.getElementById('app'), { ix: currentIx });
+  } else if (sbStepIndex >= 2) {
+    finishSentenceBuilder();
+  } else {
+    renderSentenceBuilder(document.getElementById('app'), { ix: currentIx });
+  }
+}
+
+function finishSentenceBuilder() {
+  const data = {
+    interactionType: 'sentence-builder',
+    selections: {
+      visitStyle: [...(sbSelections[0] || [])],
+      aspects: [...(sbSelections[1] || [])],
+      absorbStyle: [...(sbSelections[2] || [])]
+    }
+  };
+  navigateTo(STATE.RESULT, { data, ix: currentIx });
+}
+
+// ===================================================================
+// 5. WORD CLOUD
+// ===================================================================
+const WORD_CLOUD_CATEGORIES = [
+  {
+    title: 'How you prefer to visit?',
+    words: ['freely explore', 'unexpectedly encounter surprises', 'quickly find highlights', 'seriously learn knowledge', 'peacefully relax']
+  },
+  {
+    title: 'How you prefer to absorb information?',
+    words: ['read an interesting story', 'read a Wiki with concise, important facts', 'observe details of the artifacts']
+  },
+  {
+    title: 'Which aspect(s) do you care most about?',
+    words: ['economy', 'politics', 'funeral', 'farming', 'food culture', 'fashion', 'arts', 'no preference']
+  }
+];
+
+let cloudSelected = [];
+
+function initWordCloud() {
+  cloudSelected = [];
+}
+
+function renderWordCloud(app, extra) {
+  if (navStack.length <= 1 || navStack[navStack.length - 1].state !== STATE.WORD_CLOUD) {
+    initWordCloud();
+  }
+
+  app.innerHTML = `
+    <div class="card">
+      ${renderProgress(extra.ix + 1, 3, 'Interaction')}
+      <h2>Word Cloud Selection</h2>
+      <p class="subtle">Select one or more that interests you:</p>
+      <div id="cloudContainer">
+        ${WORD_CLOUD_CATEGORIES.map((cat, ci) => `
+          <div class="category-section">
+            <div class="category-title">${cat.title}</div>
+            <div class="cloud-grid">
+              ${cat.words.map(w => {
+                const sel = cloudSelected.includes(w);
+                return `<span class="cloud-chip${sel ? ' selected' : ''}" data-word="${escapeHTML(w)}" onclick="toggleCloudWord('${escapeHTML(w).replace(/'/g, "&#39;")}', this)">${escapeHTML(w)}</span>`;
+              }).join('')}
+            </div>
+          </div>
+        `).join('')}
+      </div>
+      <div class="btn-row between">
+        <button class="btn btn-secondary" onclick="wcGoBack()">Back</button>
+        <button class="btn btn-primary" id="wcContinue" ${cloudSelected.length > 0 ? '' : 'disabled'} onclick="finishWordCloud()">Finish</button>
+      </div>
+    </div>`;
+}
+
+const CAT3_WORDS = ['economy', 'politics', 'funeral', 'farming', 'food culture', 'fashion', 'arts', 'no preference'];
+
+function toggleCloudWord(word, el) {
+  if (word === 'no preference' && !cloudSelected.includes('no preference')) {
+    // Clear only category-3 selections, preserve categories 1 & 2
+    cloudSelected = cloudSelected.filter(w => !CAT3_WORDS.includes(w));
+    cloudSelected.push('no preference');
+  } else if (word === 'no preference' && cloudSelected.includes('no preference')) {
+    // Deselect "no preference", keep other categories intact
+    cloudSelected = cloudSelected.filter(w => w !== 'no preference');
+  } else {
+    // Remove "no preference" if selecting another category-3 word
+    cloudSelected = cloudSelected.filter(w => w !== 'no preference');
+    const idx = cloudSelected.indexOf(word);
+    if (idx >= 0) cloudSelected.splice(idx, 1);
+    else cloudSelected.push(word);
+  }
+  renderWordCloud(document.getElementById('app'), { ix: currentIx });
+}
+
+function wcGoBack() {
+  const interaction = INTERACTIONS[interactionOrder[currentIx]];
+  navStack.pop();
+  initWordCloud();
+  navigateTo(STATE.INTERACTION_INTRO, { interaction, ix: currentIx });
+}
+
+function finishWordCloud() {
+  if (cloudSelected.length === 0) return;
+  const data = {
+    interactionType: 'word-cloud',
+    selections: [...cloudSelected]
+  };
+  navigateTo(STATE.RESULT, { data, ix: currentIx });
+}
+
+// ===================================================================
+// 6. TRADITIONAL QUESTIONNAIRE
+// ===================================================================
+const QUESTIONNAIRE_QUESTIONS = [
+  {
+    text: 'How do you prefer to visit?',
+    options: ['freely explore stuffs', 'unexpectedly encounter surprises', 'quickly find highlights', 'seriously learn knowledge', 'peacefully relax']
+  },
+  {
+    text: 'How do you prefer to absorb information?',
+    options: ['Observe the patterns and details', 'Read an interesting story', 'read something like Wikipedia']
+  },
+  {
+    text: 'Which aspect(s) do you care most about?',
+    options: ['economy', 'politics', 'funeral', 'farming', 'food culture', 'fashion', 'arts', 'no preference']
+  }
+];
+
+let qnaStepIndex = 0;
+let qnaSelections = [[], [], []];
+
+function initQuestionnaire() {
+  qnaStepIndex = 0;
+  qnaSelections = [[], [], []];
+}
+
+function renderQuestionnaire(app, extra) {
+  if (navStack.length <= 1 || navStack[navStack.length - 1].state !== STATE.QUESTIONNAIRE) {
+    initQuestionnaire();
+  }
+
+  const q = QUESTIONNAIRE_QUESTIONS[qnaStepIndex];
+  const sel = qnaSelections[qnaStepIndex];
+
+  app.innerHTML = `
+    <div class="card">
+      ${renderProgress(extra.ix + 1, 3, 'Interaction')}
+      <h2>Questionnaire</h2>
+      <div class="step-indicator">Question ${qnaStepIndex + 1} of ${QUESTIONNAIRE_QUESTIONS.length}</div>
+      <p style="margin-bottom:14px;"><strong>${q.text}</strong></p>
+      ${q.options.map(o => {
+        const isSel = sel.includes(o);
+        return `<button class="q-option${isSel ? ' selected' : ''}" data-val="${escapeHTML(o)}" onclick="toggleQnaOption('${escapeHTML(o).replace(/'/g, "&#39;")}', this)">${escapeHTML(o)}</button>`;
+      }).join('')}
+      <div class="btn-row between">
+        <button class="btn btn-secondary" onclick="qnaGoBack()">Back</button>
+        <button class="btn btn-primary" ${sel.length > 0 ? '' : 'disabled'} onclick="qnaContinue()">
+          ${qnaStepIndex >= QUESTIONNAIRE_QUESTIONS.length - 1 ? 'Finish' : 'Continue'}
+        </button>
+      </div>
+    </div>`;
+}
+
+function toggleQnaOption(val, el) {
+  const sel = qnaSelections[qnaStepIndex];
+  if (val === 'no preference' && !sel.includes('no preference')) {
+    qnaSelections[qnaStepIndex] = ['no preference'];
+  } else if (val === 'no preference' && sel.includes('no preference')) {
+    qnaSelections[qnaStepIndex] = [];
+  } else {
+    qnaSelections[qnaStepIndex] = sel.filter(v => v !== 'no preference');
+    const idx = qnaSelections[qnaStepIndex].indexOf(val);
+    if (idx >= 0) qnaSelections[qnaStepIndex].splice(idx, 1);
+    else qnaSelections[qnaStepIndex].push(val);
+  }
+  renderQuestionnaire(document.getElementById('app'), { ix: currentIx });
+}
+
+function qnaGoBack() {
+  if (qnaStepIndex > 0) {
+    qnaStepIndex--;
+    renderQuestionnaire(document.getElementById('app'), { ix: currentIx });
+  } else {
+    const interaction = INTERACTIONS[interactionOrder[currentIx]];
+    navStack.pop();
+    initQuestionnaire();
+    navigateTo(STATE.INTERACTION_INTRO, { interaction, ix: currentIx });
+  }
+}
+
+function qnaContinue() {
+  if (qnaSelections[qnaStepIndex].length === 0) return;
+  if (qnaStepIndex < QUESTIONNAIRE_QUESTIONS.length - 1) {
+    qnaStepIndex++;
+    renderQuestionnaire(document.getElementById('app'), { ix: currentIx });
+  } else {
+    finishQuestionnaire();
+  }
+}
+
+function finishQuestionnaire() {
+  const data = {
+    interactionType: 'questionnaire',
+    selections: QUESTIONNAIRE_QUESTIONS.map((q, i) => ({
+      question: q.text,
+      answer: qnaSelections[i]
+    }))
+  };
+  navigateTo(STATE.RESULT, { data, ix: currentIx });
+}
+
+// ===================================================================
+// 7. RESULT PAGE
+// ===================================================================
+function renderResult(app, extra) {
+  const { data, ix } = extra;
+  app.innerHTML = `
+    <div class="card">
+      <div class="result-box">
+        <div class="result-icon">✅</div>
+        <h2>Result Generated</h2>
+        <p class="subtle">Your personalized experience has been created.</p>
+      </div>
+      <div class="btn-row right">
+        <button class="btn btn-gold" onclick="startPostSurvey(${ix}, ${JSON.stringify(data).replace(/"/g, '&quot;')})">Continue</button>
+      </div>
+    </div>`;
+}
+
+function startPostSurvey(ix, data) {
+  surveyAnswers = [null, null, null, null];
+  surveyQIndex = 0;
+  navigateTo(STATE.POST_SURVEY, { ix, data });
+}
+
+// ===================================================================
+// 8. POST-SURVEY
+// ===================================================================
+const POST_SURVEY_QUESTIONS = [
+  {
+    text: 'How related do you feel the personalized result might be?',
+    labels: ['Very unrelated', 'A little unrelated', 'Somewhat related', 'Very related']
+  },
+  {
+    text: 'How easy was it to understand how to complete this process?',
+    labels: ['Very confusing', 'Somewhat confusing', 'Fairly easy', 'Very easy']
+  },
+  {
+    text: 'How enjoyable was the personalizing process?',
+    labels: ["I don't want to do it again", "Don't like it, but I'll do it again", "It's somewhat interesting", 'Very enjoyable, I love it']
+  },
+  {
+    text: 'How likely would you use this personalization method during a real museum visit?',
+    labels: ['Would not use', 'Suspicious but would try', 'Would follow some recommendations', 'Would use frequently']
+  }
+];
+
+function renderPostSurvey(app, extra) {
+  const { ix, data } = extra;
+  const q = POST_SURVEY_QUESTIONS[surveyQIndex];
+  const currentVal = surveyAnswers[surveyQIndex];
+
+  app.innerHTML = `
+    <div class="card">
+      ${renderProgress(ix + 1, 3, 'Survey after Interaction')}
+      <div class="survey-q">
+        <p style="margin-bottom:12px;"><strong>${q.text}</strong></p>
+        <div class="scale-bar">
+          ${[0, 1, 2, 3].map(i => `
+            <div class="scale-dot${currentVal === i ? ' selected' : ''}" data-val="${i}" onclick="selectScale(${i}, this)">${i}</div>
+          `).join('')}
+        </div>
+        <div class="scale-labels">
+          <span>${q.labels[0]}</span>
+          <span>${q.labels[3]}</span>
+        </div>
+      </div>
+      <div class="btn-row right">
+        <button class="btn btn-primary" id="psContinue" ${currentVal === null ? 'disabled' : ''} onclick="psContinue(${ix}, ${JSON.stringify(data).replace(/"/g, '&quot;')})">
+          ${surveyQIndex >= 3 ? 'Continue' : 'Next'}
+        </button>
+      </div>
+    </div>`;
+}
+
+function selectScale(val, el) {
+  surveyAnswers[surveyQIndex] = val;
+  document.querySelectorAll('.scale-dot').forEach(d => d.classList.remove('selected'));
+  el.classList.add('selected');
+  document.getElementById('psContinue').disabled = false;
+}
+
+function psContinue(ix, data) {
+  if (surveyAnswers[surveyQIndex] === null) return;
+  if (surveyQIndex < 3) {
+    surveyQIndex++;
+    renderPostSurvey(document.getElementById('app'), { ix, data });
+  } else {
+    // Save all results
+    allResults.push({
+      interactionOrder: ix + 1,
+      interactionType: data.interactionType,
+      selections: data.selections,
+      surveyRatings: [...surveyAnswers]
+    });
+    advanceAfterInteraction();
+  }
+}
+
+// ===================================================================
+// 9. FINAL CHOICE
+// ===================================================================
+function renderFinalChoice(app) {
+  finalChoice = null;
+  app.innerHTML = `
+    <div class="card">
+      <h2>Final Choice</h2>
+      <p>Which personalizing way is your favourite?</p>
+      ${INTERACTIONS.map((int, i) => `
+        <button class="choice-card" data-val="${int.type}" onclick="selectFinalChoice('${int.type}', this)">${int.name}</button>
+      `).join('')}
+      <div class="btn-row right">
+        <button class="btn btn-gold" id="finalSubmit" disabled onclick="finishTest()">Submit</button>
+      </div>
+    </div>`;
+}
+
+function selectFinalChoice(val, el) {
+  finalChoice = val;
+  document.querySelectorAll('.choice-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  document.getElementById('finalSubmit').disabled = false;
+}
+
+function finishTest() {
+  if (!finalChoice) return;
+  navigateTo(STATE.THANK_YOU);
+}
+
+// ===================================================================
+// 10. THANK YOU + DATA EXPORT
+// ===================================================================
+function renderThankYou(app) {
+  const userId = getUserId();
+  const exportData = {
+    userId: userId,
+    timestamp: new Date().toISOString(),
+    preSurvey: { visitedRMO: preSurveyAnswer, visitedArcheologyNL: preSurveyNested },
+    results: allResults,
+    finalChoice: finalChoice,
+    interactionOrder: interactionOrder.map(i => INTERACTIONS[i].type)
+  };
+
+  const jsonStr = JSON.stringify(exportData, null, 2);
+
+  // Auto-save to Firebase
+  saveToFirebase(exportData);
+
+  app.innerHTML = `
+    <div class="card">
+      <div class="thankyou-box">
+        <h2>Thank You!</h2>
+        <p>Your responses have been recorded.</p>
+        <p class="subtle">Your ID: <strong>${userId}</strong></p>
+        <p class="subtle">Thank you so much for your contribution to this project.</p>
+        <button class="btn btn-secondary export-btn" onclick="copyResults()">Copy Results</button>
+      </div>
+    </div>`;
+
+  console.log('=== TEST RESULTS ===');
+  console.log('User ID:', userId);
+  console.log(jsonStr);
+
+  window._exportData = jsonStr;
+}
+
+function copyResults() {
+  if (window._exportData) {
+    navigator.clipboard.writeText(window._exportData).then(() => {
+      const btn = document.querySelector('.export-btn');
+      btn.textContent = 'Copied!';
+      setTimeout(() => { btn.textContent = 'Copy Results'; }, 2000);
+    }).catch(() => {
+      alert('Failed to copy. Check console for data.');
+    });
+  }
+}
+
+// ===================================================================
+// INIT
+// ===================================================================
+navigateTo(STATE.WELCOME);
+</script>
+</body>
+</html>
