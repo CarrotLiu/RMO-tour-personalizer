@@ -41,12 +41,12 @@ p { font-size: 15px; line-height: 1.55; color: #444; margin-bottom: 12px; }
   transition: background 0.2s, color 0.2s, opacity 0.2s;
 }
 .btn-primary { background: #1A1A2E; color: #fff; }
-.btn-primary:hover { background: #2D2D44; }
+@media (hover: hover) { .btn-primary:hover { background: #2D2D44; } }
 .btn-primary:disabled { background: #ccc; color: #999; cursor: not-allowed; }
 .btn-secondary { background: #e8e8e8; color: #444; }
-.btn-secondary:hover { background: #ddd; }
+@media (hover: hover) { .btn-secondary:hover { background: #ddd; } }
 .btn-gold { background: #C9A96E; color: #fff; }
-.btn-gold:hover { background: #b8944f; }
+@media (hover: hover) { .btn-gold:hover { background: #b8944f; } }
 
 .btn-row { display: flex; gap: 12px; margin-top: 20px; }
 .btn-row.between { justify-content: space-between; }
@@ -61,9 +61,10 @@ p { font-size: 15px; line-height: 1.55; color: #444; margin-bottom: 12px; }
 /* ===== Pre-survey ===== */
 .pre-option { display: block; width: 100%; padding: 14px 18px; margin-bottom: 10px;
   border: 2px solid #e8e8e8; border-radius: 12px; background: #fff;
-  font-size: 15px; text-align: left; cursor: pointer; transition: border-color 0.2s, background 0.2s; }
-.pre-option:hover { border-color: #C9A96E; }
-.pre-option.selected { border-color: #C9A96E; background: #FBF7F0; }
+  font-size: 15px; text-align: left; cursor: pointer; transition: border-color 0.2s, background 0.2s;
+  color: #2D2D2D; -webkit-appearance: none; appearance: none; }
+@media (hover: hover) { .pre-option:hover { border-color: #C9A96E; } }
+.pre-option.selected { border-color: #C9A96E; background: #FBF7F0; color: #1A1A2E; }
 
 /* ===== Sentence Builder ===== */
 .sentence-display {
@@ -77,13 +78,12 @@ p { font-size: 15px; line-height: 1.55; color: #444; margin-bottom: 12px; }
   border-bottom: 2px dashed #C9A96E; padding: 2px 6px; margin: 0 2px;
   vertical-align: bottom; transition: background 0.2s;
 }
-.sentence-display .blank.drag-over { background: #F0EAD6; }
 .sentence-display .blank .chip {
   display: inline-block; background: #2E7D32; color: #fff;
   border-radius: 14px; padding: 2px 10px; margin: 1px 3px;
   font-size: 14px; cursor: pointer; transition: opacity 0.15s;
 }
-.sentence-display .blank .chip:hover { opacity: 0.8; }
+@media (hover: hover) { .sentence-display .blank .chip:hover { opacity: 0.8; } }
 .sentence-display .blank .hint {
   color: #aaa; font-style: italic; font-size: 14px;
 }
@@ -96,12 +96,11 @@ p { font-size: 15px; line-height: 1.55; color: #444; margin-bottom: 12px; }
   display: inline-block; padding: 10px 18px;
   border: 2px solid #ddd; border-radius: 24px;
   background: #fff; color: #2D2D2D; font-size: 14px;
-  cursor: grab; user-select: none;
-  transition: border-color 0.2s, box-shadow 0.2s, opacity 0.2s;
+  cursor: pointer; user-select: none;
+  transition: border-color 0.2s, box-shadow 0.2s, opacity 0.2s, background 0.15s;
 }
-.word-chip:hover { border-color: #C9A96E; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-.word-chip:active { cursor: grabbing; }
-.word-chip.dragging { opacity: 0.4; }
+@media (hover: hover) { .word-chip:hover { border-color: #C9A96E; box-shadow: 0 2px 8px rgba(0,0,0,0.1); } }
+.word-chip:active { background: #F0EAD6; }
 .word-chip.used { opacity: 0.35; pointer-events: none; }
 
 .step-indicator {
@@ -125,7 +124,7 @@ p { font-size: 15px; line-height: 1.55; color: #444; margin-bottom: 12px; }
   cursor: pointer; user-select: none;
   transition: all 0.2s;
 }
-.cloud-chip:hover { border-color: #C9A96E; }
+@media (hover: hover) { .cloud-chip:hover { border-color: #C9A96E; } }
 .cloud-chip.selected { border-color: #C9A96E; background: #FBF7F0; color: #1A1A2E; font-weight: 600; }
 
 /* ===== Questionnaire ===== */
@@ -134,9 +133,10 @@ p { font-size: 15px; line-height: 1.55; color: #444; margin-bottom: 12px; }
   border: 2px solid #e8e8e8; border-radius: 12px; background: #fff;
   font-size: 15px; text-align: left; cursor: pointer;
   transition: border-color 0.2s, background 0.2s;
+  color: #2D2D2D; -webkit-appearance: none; appearance: none;
 }
-.q-option:hover { border-color: #C9A96E; }
-.q-option.selected { border-color: #C9A96E; background: #FBF7F0; }
+@media (hover: hover) { .q-option:hover { border-color: #C9A96E; } }
+.q-option.selected { border-color: #C9A96E; background: #FBF7F0; color: #1A1A2E; }
 
 /* ===== Scale Bar ===== */
 .scale-bar { display: flex; gap: 16px; justify-content: center; margin: 20px 0; }
@@ -147,7 +147,7 @@ p { font-size: 15px; line-height: 1.55; color: #444; margin-bottom: 12px; }
   cursor: pointer; transition: all 0.2s;
   display: flex; align-items: center; justify-content: center;
 }
-.scale-dot:hover { border-color: #C9A96E; }
+@media (hover: hover) { .scale-dot:hover { border-color: #C9A96E; } }
 .scale-dot.selected { background: #C9A96E; border-color: #C9A96E; color: #fff; }
 .scale-labels { display: flex; justify-content: space-between; font-size: 11px; color: #888; margin-top: 4px; }
 .scale-labels span { max-width: 70px; text-align: center; }
@@ -161,7 +161,7 @@ p { font-size: 15px; line-height: 1.55; color: #444; margin-bottom: 12px; }
   font-size: 16px; font-weight: 600; text-align: center; cursor: pointer;
   transition: all 0.2s;
 }
-.choice-card:hover { border-color: #C9A96E; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+@media (hover: hover) { .choice-card:hover { border-color: #C9A96E; box-shadow: 0 2px 12px rgba(0,0,0,0.08); } }
 .choice-card.selected { border-color: #C9A96E; background: #FBF7F0; }
 
 /* ===== Result ===== */
@@ -601,11 +601,11 @@ function renderSentenceBuilder(app, extra) {
       <h2>Sentence Builder</h2>
       <div class="step-indicator">Step ${Math.min(sbStepIndex + 1, aspectsHasNoPref ? 2 : 3)} of ${aspectsHasNoPref ? 2 : 3}</div>
       <div class="sentence-display">${displayHTML}</div>
-      <p class="subtle" style="margin-bottom:8px;">Drag words into the underlined blank above:</p>
+      <p class="subtle" style="margin-bottom:8px;">Tap words to fill the blank above:</p>
       <div class="word-pool" id="wordPool">
         ${step.words.map(w => {
           const isUsed = usedWords.has(w);
-          return `<span class="word-chip${isUsed ? ' used' : ''}" draggable="${!isUsed}" data-word="${escapeHTML(w)}" ondragstart="dragStart(event)" ondragend="dragEnd(event)">${escapeHTML(w)}</span>`;
+          return `<span class="word-chip${isUsed ? ' used' : ''}" data-word="${escapeHTML(w)}" onclick="fillWordInBlank('${escapeHTML(w).replace(/'/g, "&#39;")}')">${escapeHTML(w)}</span>`;
         }).join('')}
       </div>
       <div class="btn-row between">
@@ -614,8 +614,6 @@ function renderSentenceBuilder(app, extra) {
       </div>
     </div>`;
 
-  // Set up drop zones
-  setupDropZones();
 }
 
 function escapeHTML(str) {
@@ -628,60 +626,19 @@ function renderBlankChips(selStr, blankIdx) {
   return words.map(w => `<span class="chip" data-blank="${blankIdx}" data-word="${escapeHTML(w)}" onclick="removeFromBlank(${blankIdx}, '${escapeHTML(w).replace(/'/g, "&#39;")}')">${escapeHTML(w)}</span>`).join('');
 }
 
-function setupDropZones() {
-  const blanks = document.querySelectorAll('.blank:not(.filled)');
-  blanks.forEach(blank => {
-    blank.addEventListener('dragover', e => { e.preventDefault(); blank.classList.add('drag-over'); });
-    blank.addEventListener('dragleave', () => { blank.classList.remove('drag-over'); });
-    blank.addEventListener('drop', e => {
-      e.preventDefault();
-      blank.classList.remove('drag-over');
-      const word = e.dataTransfer.getData('text/plain');
-      if (word) dropWordOnBlank(blank.dataset.blank, word);
-    });
-  });
-
-  // Also allow dropping on filled blanks
-  const filledBlanks = document.querySelectorAll('.blank.filled');
-  filledBlanks.forEach(blank => {
-    blank.addEventListener('dragover', e => { e.preventDefault(); blank.classList.add('drag-over'); });
-    blank.addEventListener('dragleave', () => { blank.classList.remove('drag-over'); });
-    blank.addEventListener('drop', e => {
-      e.preventDefault();
-      blank.classList.remove('drag-over');
-      const word = e.dataTransfer.getData('text/plain');
-      if (word) dropWordOnBlank(blank.dataset.blank, word);
-    });
-  });
-}
-
-function dragStart(e) {
-  const word = e.target.dataset.word;
-  e.dataTransfer.setData('text/plain', word);
-  e.dataTransfer.effectAllowed = 'move';
-  e.target.classList.add('dragging');
-}
-
-function dragEnd(e) {
-  e.target.classList.remove('dragging');
-}
-
-function dropWordOnBlank(blankIdx, word) {
-  const idx = parseInt(blankIdx);
+function fillWordInBlank(word) {
+  const idx = sbStepIndex;
   const step = SENTENCE_STEPS[idx];
-  const selected = sbSelections[idx];
+  const selected = sbSelections[idx] || [];
 
   if (selected.includes(word)) return;
 
-  // For single-choice steps, clear previous selection
   if (!step.multipleChoice) {
     sbSelections[idx] = [word];
   } else {
-    // If "no preference" selected, clear other selections
     if (word === 'no preference') {
       sbSelections[idx] = ['no preference'];
     } else {
-      // Remove "no preference" if other word selected
       sbSelections[idx] = selected.filter(w => w !== 'no preference');
       sbSelections[idx].push(word);
     }
