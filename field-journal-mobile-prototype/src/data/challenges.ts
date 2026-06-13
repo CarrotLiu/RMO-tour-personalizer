@@ -32,6 +32,8 @@ export type Challenge = {
   location: { x: number; y: number };
 };
 
+const assetUrl = (path: string) => `${import.meta.env.BASE_URL}${path}`;
+
 export const challenges: Challenge[] = [
   {
     id: 'coin',
@@ -148,23 +150,23 @@ export const challenges: Challenge[] = [
     artifact: {
       alt: 'Pottery artifact',
       fallback: '◯',
-      src: '/assets/pottery/preview.png',
+      src: assetUrl('assets/pottery/preview.png'),
     },
     capture: {
       camera: {
         alt: 'Camera viewfinder aimed at pottery in the exhibition case',
         fallback: '◯',
-        src: '/assets/pottery/camera.png',
+        src: assetUrl('assets/pottery/camera.png'),
       },
       preview: {
         alt: 'Captured pottery photo preview',
         fallback: '◯',
-        src: '/assets/pottery/preview.png',
+        src: assetUrl('assets/pottery/preview.png'),
       },
       journalNote: {
         alt: 'Unlocked pottery sketch and note',
         fallback: '◯',
-        src: '/assets/pottery/journal-note.png',
+        src: assetUrl('assets/pottery/journal-note.png'),
       },
     },
     location: { x: 78, y: 68 },
