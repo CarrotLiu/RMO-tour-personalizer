@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
-import { motion, PanInfo } from 'framer-motion';
+import type { PointerEvent as ReactPointerEvent } from 'react';
+import { motion, PanInfo, useDragControls } from 'framer-motion';
 import { ChallengeAsset } from '../data/challenges';
 import { AssetImage } from './AssetImage';
 
@@ -25,20 +26,23 @@ export function DraggableOption({
   onHoverChange?: (isHovering: boolean) => void;
   onDrop: (label: string) => void;
 }) {
+  const dragControls = useDragControls();
   const timer = useRef<number | null>(null);
   const wasDragging = useRef(false);
   const isPointerDown = useRef(false);
   const isDraggingRef = useRef(false);
-  const [enabled, setEnabled] = useState(false);
+  const [isDragReady, setIsDragReady] = useState(false);
   const [flipped, setFlipped] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
 
-  function startHold() {
+  function startHold(event: ReactPointerEvent<HTMLButtonElement>) {
+    const pointerEvent = event.nativeEvent;
     isPointerDown.current = true;
     timer.current = window.setTimeout(() => {
       if (!isPointerDown.current) return;
       wasDragging.current = true;
-      setEnabled(true);
+      setIsDragReady(true);
+      dragControls.start(pointerEvent);
     }, 140);
   }
 
@@ -49,7 +53,7 @@ export function DraggableOption({
       timer.current = null;
     }
     if (!isDraggingRef.current) {
-      setEnabled(false);
+      setIsDragReady(false);
       onHoverChange?.(false);
     }
   }
@@ -64,6 +68,7 @@ export function DraggableOption({
 
   function handleDrag(_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) {
     isDraggingRef.current = true;
+    setIsDragReady(false);
     setIsDragging(true);
     onHoverChange?.(pointInRect(info.point, getDropRect()));
   }
@@ -72,7 +77,7 @@ export function DraggableOption({
     const dropped = pointInRect(info.point, getDropRect());
     isPointerDown.current = false;
     isDraggingRef.current = false;
-    setEnabled(false);
+    setIsDragReady(false);
     setIsDragging(false);
     onHoverChange?.(false);
     if (dropped) onDrop(label);
@@ -81,9 +86,11 @@ export function DraggableOption({
   return (
     <motion.button
       className={`drag-option ${compact ? 'compact' : ''} ${flipped ? 'is-flipped' : ''} ${
-        enabled ? 'is-drag-ready' : ''
+        isDragReady ? 'is-drag-ready' : ''
       } ${isDragging ? 'is-dragging' : ''}`}
-      drag={enabled}
+      drag
+      dragControls={dragControls}
+      dragListener={false}
       dragMomentum={false}
       dragSnapToOrigin
       onClick={handleTap}
