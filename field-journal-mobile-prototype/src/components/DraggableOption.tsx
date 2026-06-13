@@ -27,21 +27,30 @@ export function DraggableOption({
 }) {
   const timer = useRef<number | null>(null);
   const wasDragging = useRef(false);
+  const isPointerDown = useRef(false);
+  const isDraggingRef = useRef(false);
   const [enabled, setEnabled] = useState(false);
   const [flipped, setFlipped] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
 
   function startHold() {
+    isPointerDown.current = true;
     timer.current = window.setTimeout(() => {
+      if (!isPointerDown.current) return;
       wasDragging.current = true;
       setEnabled(true);
     }, 140);
   }
 
   function clearHold() {
+    isPointerDown.current = false;
     if (timer.current) {
       window.clearTimeout(timer.current);
       timer.current = null;
+    }
+    if (!isDraggingRef.current) {
+      setEnabled(false);
+      onHoverChange?.(false);
     }
   }
 
@@ -54,12 +63,15 @@ export function DraggableOption({
   }
 
   function handleDrag(_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) {
+    isDraggingRef.current = true;
     setIsDragging(true);
     onHoverChange?.(pointInRect(info.point, getDropRect()));
   }
 
   function handleDragEnd(_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) {
     const dropped = pointInRect(info.point, getDropRect());
+    isPointerDown.current = false;
+    isDraggingRef.current = false;
     setEnabled(false);
     setIsDragging(false);
     onHoverChange?.(false);
