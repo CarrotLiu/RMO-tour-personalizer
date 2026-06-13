@@ -29,12 +29,13 @@ export function DraggableOption({
   const wasDragging = useRef(false);
   const [enabled, setEnabled] = useState(false);
   const [flipped, setFlipped] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
 
   function startHold() {
     timer.current = window.setTimeout(() => {
       wasDragging.current = true;
       setEnabled(true);
-    }, 280);
+    }, 140);
   }
 
   function clearHold() {
@@ -53,19 +54,23 @@ export function DraggableOption({
   }
 
   function handleDrag(_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) {
+    setIsDragging(true);
     onHoverChange?.(pointInRect(info.point, getDropRect()));
   }
 
   function handleDragEnd(_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) {
     const dropped = pointInRect(info.point, getDropRect());
     setEnabled(false);
+    setIsDragging(false);
     onHoverChange?.(false);
     if (dropped) onDrop(label);
   }
 
   return (
     <motion.button
-      className={`drag-option ${compact ? 'compact' : ''} ${flipped ? 'is-flipped' : ''}`}
+      className={`drag-option ${compact ? 'compact' : ''} ${flipped ? 'is-flipped' : ''} ${
+        enabled ? 'is-drag-ready' : ''
+      } ${isDragging ? 'is-dragging' : ''}`}
       drag={enabled}
       dragMomentum={false}
       dragSnapToOrigin

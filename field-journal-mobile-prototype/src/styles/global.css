@@ -543,6 +543,25 @@ img {
   font-weight: 800;
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.18);
   transform-style: preserve-3d;
+  transition:
+    box-shadow 0.16s ease,
+    outline-color 0.16s ease,
+    transform 0.16s ease;
+}
+
+.drag-option.is-drag-ready,
+.drag-option.is-dragging {
+  outline: 2px solid rgba(247, 216, 128, 0.95);
+  outline-offset: 3px;
+  box-shadow:
+    0 0 0 6px rgba(214, 170, 74, 0.16),
+    0 0 34px rgba(247, 216, 128, 0.68),
+    0 18px 38px rgba(0, 0, 0, 0.28);
+}
+
+.drag-option.is-drag-ready .option-front,
+.drag-option.is-dragging .option-front {
+  filter: brightness(1.12);
 }
 
 .image-options .drag-option {
