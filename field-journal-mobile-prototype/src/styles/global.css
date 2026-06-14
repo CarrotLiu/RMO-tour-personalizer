@@ -100,6 +100,10 @@ img {
   gap: 12px;
 }
 
+.home-top-bar {
+  grid-template-columns: 1fr;
+}
+
 .top-bar h1 {
   margin: 0;
   font-size: 20px;
@@ -577,6 +581,7 @@ img {
 }
 
 .artifact-card {
+  position: relative;
   min-height: 260px;
   border-radius: 8px;
   padding: 18px;
@@ -619,6 +624,23 @@ img {
   color: var(--moss);
   font-size: 12px;
   font-weight: 800;
+}
+
+.text-complete-badge {
+  right: 18px;
+  top: 18px;
+}
+
+.text-challenge-prompt {
+  min-height: 150px;
+  margin: 8px 0 10px;
+  display: grid;
+  place-items: center;
+  color: #2b261b;
+  font-family: "Caveat", cursive;
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1.18;
 }
 
 .drop-zone {

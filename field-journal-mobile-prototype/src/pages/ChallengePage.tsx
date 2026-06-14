@@ -25,6 +25,7 @@ export function ChallengePage({
   const [hasPhoto, setHasPhoto] = useState(false);
   const [photoSrc, setPhotoSrc] = useState<string | null>(null);
   const [cameraError, setCameraError] = useState<string | null>(null);
+  const isTextChallenge = challenge.kind === 'text';
   const isImageChallenge = challenge.kind !== 'text' && challenge.kind !== 'capture';
   const unsolvedChallengeAsset = challenge.cardAssets?.unsolvedChallenge;
   const solvedChallengeAsset = challenge.cardAssets?.solvedChallenge;
@@ -203,22 +204,34 @@ export function ChallengePage({
         className={`artifact-card ${status}`}
         animate={status === 'wrong' ? { x: [0, -8, 8, -4, 4, 0] } : {}}
       >
-        <div className="artifact-hero">
-          <AssetImage
-            asset={
-              status === 'done'
-                ? solvedChallengeAsset ?? challenge.artifact
-                : unsolvedChallengeAsset ?? challenge.artifact
-            }
-            className="artifact-symbol"
-          />
-          {status === 'done' && (
-            <span className="complete-badge">
-              <Check size={15} />
-              Saved
-            </span>
-          )}
-        </div>
+        {isTextChallenge ? (
+          <p className="text-challenge-prompt">
+            {status === 'done' ? challenge.explanation : challenge.prompt}
+          </p>
+        ) : (
+          <div className="artifact-hero">
+            <AssetImage
+              asset={
+                status === 'done'
+                  ? solvedChallengeAsset ?? challenge.artifact
+                  : unsolvedChallengeAsset ?? challenge.artifact
+              }
+              className="artifact-symbol"
+            />
+            {status === 'done' && (
+              <span className="complete-badge">
+                <Check size={15} />
+                Saved
+              </span>
+            )}
+          </div>
+        )}
+        {isTextChallenge && status === 'done' && (
+          <span className="complete-badge text-complete-badge">
+            <Check size={15} />
+            Saved
+          </span>
+        )}
         <div
           ref={dropTargetRef}
           className={`drop-zone ${isHoveringTarget || status === 'correct' ? 'ripple' : ''}`}
@@ -236,7 +249,7 @@ export function ChallengePage({
 
       {status !== 'done' ? (
         <>
-          <p className="challenge-prompt">{challenge.prompt}</p>
+          {!isTextChallenge && <p className="challenge-prompt">{challenge.prompt}</p>}
           <div className={`option-grid ${isImageChallenge ? 'image-options' : ''}`}>
             {challenge.options.map((option) => (
               <DraggableOption

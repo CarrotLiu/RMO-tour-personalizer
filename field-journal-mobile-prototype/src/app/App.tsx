@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ChevronLeft, Lightbulb, MapPin } from 'lucide-react';
+import { ChevronLeft, Lightbulb } from 'lucide-react';
 import { challenges, Challenge } from '../data/challenges';
 import { HomePage } from '../pages/HomePage';
 import { MapPage } from '../pages/MapPage';
@@ -46,7 +46,7 @@ export default function App() {
     <main className="app-shell">
       <div className={`phone ${isMapScreen ? 'map-mode' : ''}`}>
         {!isMapScreen && (
-          <header className="top-bar">
+          <header className={`top-bar ${screen === 'home' ? 'home-top-bar' : ''}`}>
             {screen !== 'home' ? (
               <button
                 className="icon-button"
@@ -56,17 +56,19 @@ export default function App() {
                 <ChevronLeft size={18} />
               </button>
             ) : (
-              <span className="brand-dot">
-                <MapPin size={15} />
-              </span>
+              <span aria-hidden="true" />
             )}
             <div>
               <h1>My Field Journal</h1>
               <p>The Archaeology of the Netherlands</p>
             </div>
-            <button className="icon-button" type="button">
-              <Lightbulb size={18} />
-            </button>
+            {screen !== 'home' ? (
+              <button className="icon-button" type="button">
+                <Lightbulb size={18} />
+              </button>
+            ) : (
+              <span aria-hidden="true" />
+            )}
           </header>
         )}
 
