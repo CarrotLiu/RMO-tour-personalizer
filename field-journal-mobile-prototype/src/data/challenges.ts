@@ -142,7 +142,7 @@ export const challenges: Challenge[] = [
       unsolvedPreview: {
         alt: 'Unsolved Bronze Age fashion preview',
         fallback: '⌁',
-        src: assetUrl('assets/bronze_age/unsolved_preview.png'),
+        src: assetUrl('assets/bronze_age/unsolved_challenge.png'),
       },
       unsolvedChallenge: {
         alt: 'Unsolved Bronze Age fashion challenge card',
