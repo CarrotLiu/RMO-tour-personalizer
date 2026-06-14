@@ -13,9 +13,10 @@ export default function App() {
   const [screen, setScreen] = useState<Screen>('home');
   const [activeIndex, setActiveIndex] = useState(0);
   const [mapIndex, setMapIndex] = useState(0);
-  const [completed, setCompleted] = useState<string[]>(['coin']);
+  const [completed, setCompleted] = useState<string[]>([]);
 
   const activeChallenge = challenges[activeIndex];
+  const isMapScreen = screen === 'map';
   const unlocked = useMemo(
     () => challenges.filter((challenge) => completed.includes(challenge.id)),
     [completed],
@@ -43,29 +44,31 @@ export default function App() {
 
   return (
     <main className="app-shell">
-      <div className="phone">
-        <header className="top-bar">
-          {screen !== 'home' ? (
-            <button
-              className="icon-button"
-              onClick={() => setScreen(screen === 'challenge' ? 'map' : 'home')}
-              type="button"
-            >
-              <ChevronLeft size={18} />
+      <div className={`phone ${isMapScreen ? 'map-mode' : ''}`}>
+        {!isMapScreen && (
+          <header className="top-bar">
+            {screen !== 'home' ? (
+              <button
+                className="icon-button"
+                onClick={() => setScreen(screen === 'challenge' ? 'map' : 'home')}
+                type="button"
+              >
+                <ChevronLeft size={18} />
+              </button>
+            ) : (
+              <span className="brand-dot">
+                <MapPin size={15} />
+              </span>
+            )}
+            <div>
+              <h1>My Field Journal</h1>
+              <p>The Archaeology of the Netherlands</p>
+            </div>
+            <button className="icon-button" type="button">
+              <Lightbulb size={18} />
             </button>
-          ) : (
-            <span className="brand-dot">
-              <MapPin size={15} />
-            </span>
-          )}
-          <div>
-            <h1>My Field Journal</h1>
-            <p>The Archaeology of the Netherlands</p>
-          </div>
-          <button className="icon-button" type="button">
-            <Lightbulb size={18} />
-          </button>
-        </header>
+          </header>
+        )}
 
         <AnimatePresence mode="wait">
           <motion.section
@@ -90,6 +93,7 @@ export default function App() {
                 activeIndex={mapIndex}
                 onChange={setMapIndex}
                 onOpen={openChallenge}
+                onBack={() => setScreen('home')}
               />
             )}
             {screen === 'collection' && (

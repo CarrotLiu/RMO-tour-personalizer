@@ -26,6 +26,8 @@ export function ChallengePage({
   const [photoSrc, setPhotoSrc] = useState<string | null>(null);
   const [cameraError, setCameraError] = useState<string | null>(null);
   const isImageChallenge = challenge.kind !== 'text' && challenge.kind !== 'capture';
+  const unsolvedChallengeAsset = challenge.cardAssets?.unsolvedChallenge;
+  const solvedChallengeAsset = challenge.cardAssets?.solvedChallenge;
 
   function stopCamera() {
     streamRef.current?.getTracks().forEach((track) => track.stop());
@@ -141,7 +143,10 @@ export function ChallengePage({
       <div className="challenge-page capture-page">
         <motion.div className={`capture-card ${status}`}>
           {status === 'done' ? (
-            <AssetImage asset={challenge.capture.journalNote} className="journal-note-image" />
+            <AssetImage
+              asset={solvedChallengeAsset ?? challenge.capture.journalNote}
+              className="journal-note-image"
+            />
           ) : hasPhoto && photoSrc ? (
             <img className="camera-image" src={photoSrc} alt="Captured pottery artifact preview" />
           ) : (
@@ -199,7 +204,14 @@ export function ChallengePage({
         animate={status === 'wrong' ? { x: [0, -8, 8, -4, 4, 0] } : {}}
       >
         <div className="artifact-hero">
-          <AssetImage asset={challenge.artifact} className="artifact-symbol" />
+          <AssetImage
+            asset={
+              status === 'done'
+                ? solvedChallengeAsset ?? challenge.artifact
+                : unsolvedChallengeAsset ?? challenge.artifact
+            }
+            className="artifact-symbol"
+          />
           {status === 'done' && (
             <span className="complete-badge">
               <Check size={15} />
@@ -207,7 +219,6 @@ export function ChallengePage({
             </span>
           )}
         </div>
-        <p>{status === 'done' ? challenge.explanation : challenge.prompt}</p>
         <div
           ref={dropTargetRef}
           className={`drop-zone ${isHoveringTarget || status === 'correct' ? 'ripple' : ''}`}
@@ -224,19 +235,22 @@ export function ChallengePage({
       </motion.div>
 
       {status !== 'done' ? (
-        <div className={`option-grid ${isImageChallenge ? 'image-options' : ''}`}>
-          {challenge.options.map((option) => (
-            <DraggableOption
-              key={option.id}
-              label={option.label}
-              asset={option.asset}
-              flipText={isImageChallenge ? option.explanation : undefined}
-              getDropRect={getDropRect}
-              onHoverChange={setIsHoveringTarget}
-              onDrop={handleDrop}
-            />
-          ))}
-        </div>
+        <>
+          <p className="challenge-prompt">{challenge.prompt}</p>
+          <div className={`option-grid ${isImageChallenge ? 'image-options' : ''}`}>
+            {challenge.options.map((option) => (
+              <DraggableOption
+                key={option.id}
+                label={option.label}
+                asset={option.asset}
+                flipText={isImageChallenge ? option.explanation : undefined}
+                getDropRect={getDropRect}
+                onHoverChange={setIsHoveringTarget}
+                onDrop={handleDrop}
+              />
+            ))}
+          </div>
+        </>
       ) : (
         <div className="completion-card">
           <h2>Journal page unlocked</h2>

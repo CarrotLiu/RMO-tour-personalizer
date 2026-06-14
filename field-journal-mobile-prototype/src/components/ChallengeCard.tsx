@@ -11,9 +11,13 @@ export function ChallengeCard({
   completed: boolean;
   onClick: () => void;
 }) {
+  const previewAsset = completed
+    ? challenge.cardAssets?.solvedPreview ?? challenge.artifact
+    : challenge.cardAssets?.unsolvedPreview ?? challenge.artifact;
+
   return (
     <button className={`challenge-card ${completed ? 'completed' : ''}`} onClick={onClick} type="button">
-      <AssetImage asset={challenge.artifact} className="challenge-art" />
+      <AssetImage asset={previewAsset} className="challenge-art" />
       <strong>{challenge.cardTitle}</strong>
       <span>{challenge.title}</span>
       <em>
