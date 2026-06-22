@@ -3,8 +3,15 @@ import { motion } from 'framer-motion';
 import { Camera, Check, Sparkles, X } from 'lucide-react';
 import { Challenge } from '../data/challenges';
 import { AssetImage } from '../components/AssetImage';
+import { BronzeAgeGapChallenge } from '../components/BronzeAgeGapChallenge';
 import { DraggableOption } from '../components/DraggableOption';
-import { requestRecognitionDecision } from '../app/recognitionRelay';
+import { StoneTombGapChallenge } from '../components/StoneTombGapChallenge';
+import { TextGapChallenge } from '../components/TextGapChallenge';
+import {
+  DirectionHint,
+  getPictureCheckingEnabled,
+  requestRecognitionDecision,
+} from '../app/recognitionRelay';
 
 type ChallengePhase = 'capture' | 'review' | 'recognizing' | 'challenge' | 'done';
 type FeedbackStatus = 'idle' | 'correct' | 'wrong' | 'done';
@@ -28,6 +35,7 @@ export function ChallengePage({
   const [hasPhoto, setHasPhoto] = useState(false);
   const [photoSrc, setPhotoSrc] = useState<string | null>(null);
   const [cameraError, setCameraError] = useState<string | null>(null);
+  const [recognitionHint, setRecognitionHint] = useState<string | null>(null);
   const isTextChallenge = challenge.kind === 'text';
   const isImageChallenge = challenge.kind !== 'text' && challenge.kind !== 'capture';
   const unsolvedChallengeAsset = challenge.cardAssets?.unsolvedChallenge;
@@ -46,6 +54,7 @@ export function ChallengePage({
     setHasPhoto(false);
     setPhotoSrc(null);
     setCameraError(null);
+    setRecognitionHint(null);
   }, [challenge.id, completed]);
 
   useEffect(() => {
@@ -124,33 +133,32 @@ export function ChallengePage({
     stopCamera();
     setPhase('recognizing');
     setStatus('idle');
+    setRecognitionHint(null);
 
     try {
-      const decision = await requestRecognitionDecision(challenge.id, challenge.title);
+      const checkingEnabled = await getPictureCheckingEnabled();
 
-      if (decision === 'wrong') {
+      if (!checkingEnabled) {
+        advanceAfterRecognized();
+        return;
+      }
+
+      const result = await requestRecognitionDecision(challenge.id, challenge.title);
+
+      if (result.decision === 'wrong') {
+        setRecognitionHint(result.hint ? hintCopy[result.hint] : 'Wrong artifact, try another one!');
         setStatus('wrong');
         window.setTimeout(() => {
           setPhotoSrc(null);
           setHasPhoto(false);
           setStatus('idle');
+          setRecognitionHint(null);
           setPhase('capture');
         }, 3000);
         return;
       }
 
-      setStatus('correct');
-      window.setTimeout(() => {
-        if (hasFollowUpChallenge) {
-          setPhase('challenge');
-          setStatus('idle');
-          return;
-        }
-
-        setPhase('done');
-        setStatus('done');
-        onComplete();
-      }, 700);
+      advanceAfterRecognized();
     } catch {
       setStatus('wrong');
       window.setTimeout(() => {
@@ -158,6 +166,21 @@ export function ChallengePage({
         setPhase('review');
       }, 3000);
     }
+  }
+
+  function advanceAfterRecognized() {
+    setStatus('correct');
+    window.setTimeout(() => {
+      if (hasFollowUpChallenge) {
+        setPhase('challenge');
+        setStatus('idle');
+        return;
+      }
+
+      setPhase('done');
+      setStatus('done');
+      onComplete();
+    }, 700);
   }
 
   function handleCapturePhoto() {
@@ -178,6 +201,12 @@ export function ChallengePage({
     setPhotoSrc(null);
     setHasPhoto(false);
     setPhase('capture');
+  }
+
+  function handleChallengeComplete() {
+    setPhase('done');
+    setStatus('done');
+    onComplete();
   }
 
   if (phase === 'capture' || phase === 'review' || phase === 'recognizing') {
@@ -208,7 +237,9 @@ export function ChallengePage({
         </motion.div>
 
         {status === 'wrong' && (
-          <p className="capture-feedback wrong">Wrong artifact, try another one!</p>
+          <p className="capture-feedback wrong">
+            {recognitionHint ?? 'Wrong artifact, try another one!'}
+          </p>
         )}
 
         {phase === 'recognizing' && status !== 'wrong' ? (
@@ -254,6 +285,18 @@ export function ChallengePage({
         <p className="capture-note">{challenge.explanation}</p>
       </div>
     );
+  }
+
+  if (challenge.id === 'pin') {
+    return <BronzeAgeGapChallenge challenge={challenge} onComplete={handleChallengeComplete} />;
+  }
+
+  if (challenge.id === 'skeleton') {
+    return <StoneTombGapChallenge challenge={challenge} onComplete={handleChallengeComplete} />;
+  }
+
+  if (isTextChallenge && !unsolvedChallengeAsset) {
+    return <TextGapChallenge challenge={challenge} onComplete={handleChallengeComplete} />;
   }
 
   return (
@@ -337,3 +380,10 @@ export function ChallengePage({
     </div>
   );
 }
+
+const hintCopy: Record<DirectionHint, string> = {
+  forward: "Look forward! It's in front of you",
+  backward: "Look backward! It's behind you",
+  left: "Look left! It's on your left",
+  right: "Look right! It's on your right",
+};

@@ -7,15 +7,17 @@ import { MapPage } from '../pages/MapPage';
 import { CollectionPage } from '../pages/CollectionPage';
 import { ChallengePage } from '../pages/ChallengePage';
 import { JudgePage } from '../pages/JudgePage';
+import { RegistrationPage } from '../pages/RegistrationPage';
 
-type Screen = 'home' | 'map' | 'collection' | 'challenge';
+type Screen = 'register' | 'home' | 'map' | 'collection' | 'challenge';
 
 export default function App() {
   if (new URLSearchParams(window.location.search).has('judge')) {
     return <JudgePage />;
   }
 
-  const [screen, setScreen] = useState<Screen>('home');
+  const [visitorName, setVisitorName] = useState('');
+  const [screen, setScreen] = useState<Screen>('register');
   const [activeIndex, setActiveIndex] = useState(0);
   const [mapIndex, setMapIndex] = useState(0);
   const [completed, setCompleted] = useState<string[]>([]);
@@ -47,10 +49,15 @@ export default function App() {
     setCompleted((previous) => (previous.includes(id) ? previous : [...previous, id]));
   }
 
+  function registerVisitor(name: string) {
+    setVisitorName(name);
+    setScreen('home');
+  }
+
   return (
     <main className="app-shell">
-      <div className={`phone ${isMapScreen ? 'map-mode' : ''}`}>
-        {!isMapScreen && (
+      <div className={`phone ${isMapScreen ? 'map-mode' : ''} ${screen === 'register' ? 'register-mode' : ''}`}>
+        {!isMapScreen && screen !== 'register' && (
           <header className={`top-bar ${screen === 'home' ? 'home-top-bar' : ''}`}>
             {screen !== 'home' ? (
               <button
@@ -65,7 +72,6 @@ export default function App() {
             )}
             <div>
               <h1>My Field Journal</h1>
-              <p>The Archaeology of the Netherlands</p>
             </div>
             {screen !== 'home' ? (
               <button className="icon-button" type="button">
@@ -85,8 +91,10 @@ export default function App() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -18 }}
           >
+            {screen === 'register' && <RegistrationPage onRegister={registerVisitor} />}
             {screen === 'home' && (
               <HomePage
+                visitorName={visitorName}
                 unlocked={unlocked}
                 onStart={() => setScreen('map')}
                 onCollection={() => setScreen('collection')}

@@ -1,0 +1,184 @@
+{
+  "schemaVersion": 1,
+  "challengeSlots": [
+    "text-low",
+    "text-medium",
+    "text-high",
+    "image-low",
+    "image-medium",
+    "image-high"
+  ],
+  "artifacts": [
+    {
+      "id": "pottery",
+      "title": "Pottery Making",
+      "period": "5300-4900 BC",
+      "labels": {
+        "aspects": ["farming", "daily", "technology"],
+        "highlight": "visual"
+      },
+      "assets": {
+        "unsolvedPreview": "artifacts/pottery/previews/unsolved.png",
+        "solvedPreview": "artifacts/pottery/previews/solved.png",
+        "map": "artifacts/pottery/map/location.png"
+      },
+      "challenges": {
+        "capture-low": {
+          "effort": "low",
+          "display": "capture",
+          "status": "ready",
+          "assets": {
+            "solved": "artifacts/pottery/challenges/capture-low/solved.png"
+          }
+        }
+      }
+    },
+    {
+      "id": "bronze-age-fashion",
+      "title": "Bronze Age Fashion",
+      "period": "1500-1350 BC",
+      "labels": {
+        "aspects": ["fashion", "daily", "technology"],
+        "highlight": "visual"
+      },
+      "assets": {
+        "unsolvedPreview": "artifacts/bronze-age-fashion/previews/unsolved.png",
+        "solvedPreview": "artifacts/bronze-age-fashion/previews/solved.png",
+        "map": "artifacts/bronze-age-fashion/map/location.png"
+      },
+      "challenges": {
+        "image-medium": {
+          "effort": "medium",
+          "display": "image",
+          "status": "ready",
+          "assets": {
+            "unsolved": "artifacts/bronze-age-fashion/challenges/image-medium/unsolved.png",
+            "allSolved": "artifacts/bronze-age-fashion/challenges/image-medium/options/drop/all_solved.png",
+            "options": {
+              "hairPin": "artifacts/bronze-age-fashion/challenges/image-medium/options/static/hair.png",
+              "razor": "artifacts/bronze-age-fashion/challenges/image-medium/options/static/razor.png",
+              "cloakPin": "artifacts/bronze-age-fashion/challenges/image-medium/options/static/cloak.png",
+              "earRing": "artifacts/bronze-age-fashion/challenges/image-medium/options/static/ear_ring.png"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "ommerschans-sword",
+      "title": "Sword of Ommerschans",
+      "period": "1500-1350 BC",
+      "labels": {
+        "aspects": ["power", "ritual", "technology"],
+        "highlight": "curatorial"
+      },
+      "assets": {
+        "unsolvedPreview": "artifacts/ommerschans-sword/previews/unsolved.png",
+        "solvedPreview": "artifacts/ommerschans-sword/previews/solved.png",
+        "map": "artifacts/ommerschans-sword/map/location.png"
+      },
+      "challenges": {}
+    },
+    {
+      "id": "byzantine-coin",
+      "title": "Byzantine Coin",
+      "period": "7th century AD",
+      "labels": {
+        "aspects": ["trade", "power", "fashion"],
+        "highlight": "curatorial"
+      },
+      "assets": {
+        "unsolvedPreview": "artifacts/byzantine-coin/previews/unsolved.png",
+        "solvedPreview": "artifacts/byzantine-coin/previews/solved.png",
+        "map": "artifacts/byzantine-coin/map/location.png"
+      },
+      "challenges": {}
+    },
+    {
+      "id": "dorestad-brooch",
+      "title": "Dorestad Brooch",
+      "period": "9th century AD",
+      "labels": {
+        "aspects": ["trade", "power", "ritual", "fashion"],
+        "highlight": "curatorial"
+      },
+      "assets": {
+        "unsolvedPreview": "artifacts/dorestad-brooch/previews/unsolved.png",
+        "solvedPreview": "artifacts/dorestad-brooch/previews/solved.png",
+        "map": "artifacts/dorestad-brooch/map/location.png"
+      },
+      "challenges": {}
+    },
+    {
+      "id": "stone-tomb",
+      "title": "A Stone Tomb Unearthed",
+      "period": "Early Middle Ages",
+      "labels": {
+        "aspects": ["ritual", "daily", "power"],
+        "highlight": "visual"
+      },
+      "assets": {
+        "unsolvedPreview": "artifacts/stone-tomb/previews/unsolved.png",
+        "solvedPreview": "artifacts/stone-tomb/previews/solved.png",
+        "map": "artifacts/stone-tomb/map/location.png"
+      },
+      "challenges": {
+        "text-low": {
+          "effort": "low",
+          "display": "text",
+          "status": "planned",
+          "promptPattern": "There are ______ sketches in the stone tomb."
+        },
+        "text-medium": {
+          "effort": "medium",
+          "display": "text",
+          "status": "planned",
+          "promptPattern": "On the skeleton, a ______ is placed on the face, a ______ is placed on the chest, a ______ is on the finger, and a ______ is on the pelvis."
+        },
+        "text-high": {
+          "effort": "high",
+          "display": "text",
+          "status": "planned",
+          "promptPattern": "The pendant found on the skeleton may symbolize ______, and the crucifix ______."
+        },
+        "image-low": {
+          "effort": "low",
+          "display": "image",
+          "status": "planned"
+        },
+        "image-medium": {
+          "effort": "medium",
+          "display": "image",
+          "status": "planned"
+        },
+        "image-high": {
+          "effort": "high",
+          "display": "image",
+          "status": "ready",
+          "assets": {
+            "unsolved": "artifacts/stone-tomb/challenges/image-high/unsolved.png",
+            "allSolved": "artifacts/stone-tomb/challenges/image-high/answers/all_solved.png",
+            "options": {
+              "coin": {
+                "static": "artifacts/stone-tomb/challenges/image-high/options/static/coin.png",
+                "drop": "artifacts/stone-tomb/challenges/image-high/options/drop/coin.png"
+              },
+              "crucifix": {
+                "static": "artifacts/stone-tomb/challenges/image-high/options/static/crucifix.png",
+                "drop": "artifacts/stone-tomb/challenges/image-high/options/drop/crucifix.png"
+              },
+              "fingerRing": {
+                "static": "artifacts/stone-tomb/challenges/image-high/options/static/finger_ring.png",
+                "drop": "artifacts/stone-tomb/challenges/image-high/options/drop/finger_ring.png"
+              },
+              "padlock": {
+                "static": "artifacts/stone-tomb/challenges/image-high/options/static/padlock.png",
+                "drop": "artifacts/stone-tomb/challenges/image-high/options/drop/padlock.png"
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

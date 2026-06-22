@@ -11,6 +11,7 @@ export type ChallengeOption = {
   label: string;
   asset?: ChallengeAsset;
   explanation?: string;
+  targetId?: string;
 };
 
 export type Challenge = {
@@ -57,23 +58,23 @@ export const challenges: Challenge[] = [
     artifact: {
       alt: 'Pottery artifact',
       fallback: '◯',
-      src: assetUrl('assets/pottery/unsolved_preview.png'),
+      src: assetUrl('assets/artifacts/pottery/previews/unsolved.png'),
     },
     cardAssets: {
       unsolvedPreview: {
         alt: 'Unsolved pottery preview',
         fallback: '◯',
-        src: assetUrl('assets/pottery/unsolved_preview.png'),
+        src: assetUrl('assets/artifacts/pottery/previews/unsolved.png'),
       },
       solvedPreview: {
         alt: 'Solved pottery preview',
         fallback: '◯',
-        src: assetUrl('assets/pottery/solved_preview.png'),
+        src: assetUrl('assets/artifacts/pottery/previews/solved.png'),
       },
       solvedChallenge: {
         alt: 'Solved pottery challenge card',
         fallback: '◯',
-        src: assetUrl('assets/pottery/solved_challenge.png'),
+        src: assetUrl('assets/artifacts/pottery/challenges/capture-low/solved.png'),
       },
     },
     capture: {
@@ -88,13 +89,13 @@ export const challenges: Challenge[] = [
       journalNote: {
         alt: 'Unlocked pottery sketch and note',
         fallback: '◯',
-        src: assetUrl('assets/pottery/solved_challenge.png'),
+        src: assetUrl('assets/artifacts/pottery/challenges/capture-low/solved.png'),
       },
     },
     mapAsset: {
       alt: 'Map location for pottery making',
       fallback: 'Map',
-      src: assetUrl('assets/map/pottery_map.png'),
+      src: assetUrl('assets/artifacts/pottery/map/location.png'),
     },
     location: { x: 78, y: 68 },
   },
@@ -110,27 +111,47 @@ export const challenges: Challenge[] = [
     options: [
       {
         id: 'hair-pin',
-        label: 'Hair pin',
+        label: 'Hair (pin)',
         explanation: 'This looks close, but the cloak clue asks for a fastening pin.',
-        asset: { alt: 'Hair pin sketch', fallback: '|' },
+        targetId: 'hair',
+        asset: {
+          alt: 'Hair pin option',
+          fallback: '|',
+          src: assetUrl('assets/artifacts/bronze-age-fashion/challenges/image-medium/options/static/hair.png'),
+        },
       },
       {
-        id: 'knife',
-        label: 'A knife for cutting mustache',
+        id: 'razor',
+        label: 'Razor',
         explanation: 'A knife would be useful elsewhere, but not for holding a cloak.',
-        asset: { alt: 'Small knife sketch', fallback: '╱' },
+        targetId: 'razor',
+        asset: {
+          alt: 'Razor option',
+          fallback: '╱',
+          src: assetUrl('assets/artifacts/bronze-age-fashion/challenges/image-medium/options/static/razor.png'),
+        },
       },
       {
         id: 'cloak-pin',
-        label: 'A pin for holding cloak',
+        label: 'Cloak (pin)',
         explanation: 'The pin fastens the cloak and completes the clothing reconstruction.',
-        asset: { alt: 'Cloak pin sketch', fallback: '⌁' },
+        targetId: 'cloak',
+        asset: {
+          alt: 'Cloak pin option',
+          fallback: '⌁',
+          src: assetUrl('assets/artifacts/bronze-age-fashion/challenges/image-medium/options/static/cloak.png'),
+        },
       },
       {
         id: 'earrings',
-        label: 'A pair of rings that decorates human ears',
+        label: 'Ear Ring',
         explanation: 'Rings decorate the body, but they do not solve the cloak gap.',
-        asset: { alt: 'Pair of rings sketch', fallback: '∞' },
+        targetId: 'ear-ring',
+        asset: {
+          alt: 'Ear ring option',
+          fallback: '∞',
+          src: assetUrl('assets/artifacts/bronze-age-fashion/challenges/image-medium/options/static/ear_ring.png'),
+        },
       },
     ],
     explanation: 'The pin helps hold the cloak in place. The completed page records the clothing clue.',
@@ -142,23 +163,28 @@ export const challenges: Challenge[] = [
       unsolvedPreview: {
         alt: 'Unsolved Bronze Age fashion preview',
         fallback: '⌁',
-        src: assetUrl('assets/bronze_age/unsolved_preview.png'),
+        src: assetUrl('assets/artifacts/bronze-age-fashion/previews/unsolved.png'),
       },
       unsolvedChallenge: {
         alt: 'Unsolved Bronze Age fashion challenge card',
         fallback: '⌁',
-        src: assetUrl('assets/bronze_age/unsolved_challenge.png'),
+        src: assetUrl('assets/artifacts/bronze-age-fashion/challenges/image-medium/unsolved.png'),
+      },
+      solvedChallenge: {
+        alt: 'Solved Bronze Age fashion challenge card',
+        fallback: '⌁',
+        src: assetUrl('assets/artifacts/bronze-age-fashion/challenges/image-medium/options/drop/all_solved.png'),
       },
       solvedPreview: {
         alt: 'Solved Bronze Age fashion preview',
         fallback: '⌁',
-        src: assetUrl('assets/bronze_age/solved_preview.png'),
+        src: assetUrl('assets/artifacts/bronze-age-fashion/previews/solved.png'),
       },
     },
     mapAsset: {
       alt: 'Map location for Bronze Age fashion',
       fallback: 'Map',
-      src: assetUrl('assets/map/bronze_age_map.png'),
+      src: assetUrl('assets/artifacts/bronze-age-fashion/map/location.png'),
     },
     location: { x: 62, y: 55 },
   },
@@ -185,18 +211,18 @@ export const challenges: Challenge[] = [
       unsolvedPreview: {
         alt: 'Unsolved Sword of Ommerschans preview',
         fallback: '†',
-        src: assetUrl('assets/Ommerschans%20_Sword/unsolved_preview.png'),
+        src: assetUrl('assets/artifacts/ommerschans-sword/previews/unsolved.png'),
       },
       solvedPreview: {
         alt: 'Solved Sword of Ommerschans preview',
         fallback: '†',
-        src: assetUrl('assets/Ommerschans%20_Sword/solved_preview.png'),
+        src: assetUrl('assets/artifacts/ommerschans-sword/previews/solved.png'),
       },
     },
     mapAsset: {
       alt: 'Map location for Sword of Ommerschans',
       fallback: 'Map',
-      src: assetUrl('assets/map/sword_map.png'),
+      src: assetUrl('assets/artifacts/ommerschans-sword/map/location.png'),
     },
     location: { x: 54, y: 42 },
   },
@@ -223,18 +249,18 @@ export const challenges: Challenge[] = [
       unsolvedPreview: {
         alt: 'Unsolved Byzantine coin preview',
         fallback: '◎',
-        src: assetUrl('assets/coin/unsolved_preview.png'),
+        src: assetUrl('assets/artifacts/byzantine-coin/previews/unsolved.png'),
       },
       solvedPreview: {
         alt: 'Solved Byzantine coin preview',
         fallback: '◎',
-        src: assetUrl('assets/coin/solved_preview.png'),
+        src: assetUrl('assets/artifacts/byzantine-coin/previews/solved.png'),
       },
     },
     mapAsset: {
       alt: 'Map location for Byzantine coin',
       fallback: 'Map',
-      src: assetUrl('assets/map/coin_map.png'),
+      src: assetUrl('assets/artifacts/byzantine-coin/map/location.png'),
     },
     location: { x: 24, y: 34 },
   },
@@ -261,18 +287,18 @@ export const challenges: Challenge[] = [
       unsolvedPreview: {
         alt: 'Unsolved Dorestad brooch preview',
         fallback: '◈',
-        src: assetUrl('assets/brooch/unsolved_preview.png'),
+        src: assetUrl('assets/artifacts/dorestad-brooch/previews/unsolved.png'),
       },
       solvedPreview: {
         alt: 'Solved Dorestad brooch preview',
         fallback: '◈',
-        src: assetUrl('assets/brooch/solved_preview.png'),
+        src: assetUrl('assets/artifacts/dorestad-brooch/previews/solved.png'),
       },
     },
     mapAsset: {
       alt: 'Map location for Dorestad brooch',
       fallback: 'Map',
-      src: assetUrl('assets/map/brooch_map.png'),
+      src: assetUrl('assets/artifacts/dorestad-brooch/map/location.png'),
     },
     location: { x: 34, y: 58 },
   },
@@ -280,35 +306,55 @@ export const challenges: Challenge[] = [
     id: 'skeleton',
     title: 'Draw the Burial',
     period: 'Early Middle Ages',
-    kind: 'image-medium',
+    kind: 'image-high',
     cardTitle: 'A Stone Tomb Unearthed',
     prompt: 'Long press a sketch, then drag it to the missing place in the burial drawing.',
-    targetLabel: 'Missing object',
-    correctAnswer: 'Coin',
+    targetLabel: 'Missing objects',
+    correctAnswer: 'All objects placed',
     options: [
       {
         id: 'coin',
         label: 'Coin',
         explanation: 'A coin can belong near the mouth area in this reconstruction.',
-        asset: { alt: 'Coin sketch', fallback: '◎' },
+        targetId: 'face',
+        asset: {
+          alt: 'Coin sketch',
+          fallback: '◎',
+          src: assetUrl('assets/artifacts/stone-tomb/challenges/image-high/options/static/coin.png'),
+        },
       },
       {
         id: 'padlock',
         label: 'Padlock',
         explanation: 'A padlock is a later object and does not fit this burial clue.',
-        asset: { alt: 'Padlock sketch', fallback: '▣' },
+        targetId: 'lower-pelvis',
+        asset: {
+          alt: 'Padlock sketch',
+          fallback: '▣',
+          src: assetUrl('assets/artifacts/stone-tomb/challenges/image-high/options/static/padlock.png'),
+        },
       },
       {
         id: 'crucifix',
         label: 'Crucifix',
         explanation: 'A crucifix points to a different religious context.',
-        asset: { alt: 'Crucifix sketch', fallback: '✚' },
+        targetId: 'chest',
+        asset: {
+          alt: 'Crucifix sketch',
+          fallback: '✚',
+          src: assetUrl('assets/artifacts/stone-tomb/challenges/image-high/options/static/crucifix.png'),
+        },
       },
       {
-        id: 'ring',
+        id: 'finger-ring',
         label: 'Finger Ring',
         explanation: 'A ring can signal status, but it is not the missing object here.',
-        asset: { alt: 'Finger ring sketch', fallback: '○' },
+        targetId: 'right-pelvis',
+        asset: {
+          alt: 'Finger ring sketch',
+          fallback: '○',
+          src: assetUrl('assets/artifacts/stone-tomb/challenges/image-high/options/static/finger_ring.png'),
+        },
       },
     ],
     explanation: 'The coin belongs near the mouth area. The journal page now keeps the reconstructed note.',
@@ -320,23 +366,28 @@ export const challenges: Challenge[] = [
       unsolvedPreview: {
         alt: 'Unsolved stone tomb preview',
         fallback: '☠',
-        src: assetUrl('assets/stone_tomb/unsolved_preview.png'),
+        src: assetUrl('assets/artifacts/stone-tomb/previews/unsolved.png'),
       },
       unsolvedChallenge: {
         alt: 'Unsolved stone tomb challenge card',
         fallback: '☠',
-        src: assetUrl('assets/stone_tomb/unsolved_challenge.png'),
+        src: assetUrl('assets/artifacts/stone-tomb/challenges/image-high/unsolved.png'),
+      },
+      solvedChallenge: {
+        alt: 'Solved stone tomb challenge card',
+        fallback: '☠',
+        src: assetUrl('assets/artifacts/stone-tomb/challenges/image-high/answers/all_solved.png'),
       },
       solvedPreview: {
         alt: 'Solved stone tomb preview',
         fallback: '☠',
-        src: assetUrl('assets/stone_tomb/solved_preview.png'),
+        src: assetUrl('assets/artifacts/stone-tomb/previews/solved.png'),
       },
     },
     mapAsset: {
       alt: 'Map location for stone tomb',
       fallback: 'Map',
-      src: assetUrl('assets/map/tomb_map.png'),
+      src: assetUrl('assets/artifacts/stone-tomb/map/location.png'),
     },
     location: { x: 42, y: 45 },
   },

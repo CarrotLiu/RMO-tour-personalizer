@@ -2,18 +2,38 @@ import { useEffect, useState } from 'react';
 import { Check, X } from 'lucide-react';
 import {
   createRecognitionChannel,
+  DirectionHint,
+  getPictureCheckingEnabled,
   getJudgeServer,
   getJudgeSession,
-  RecognitionDecision,
   RecognitionRequest,
   sendRecognitionDecision,
+  setPictureCheckingEnabled,
 } from '../app/recognitionRelay';
 
 export function JudgePage() {
   const [request, setRequest] = useState<RecognitionRequest | null>(null);
   const [lastDecision, setLastDecision] = useState<string | null>(null);
+  const [checkingEnabled, setCheckingEnabled] = useState(false);
   const server = getJudgeServer();
   const session = getJudgeSession();
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadSettings() {
+      const enabled = await getPictureCheckingEnabled();
+      if (!cancelled) {
+        setCheckingEnabled(enabled);
+      }
+    }
+
+    loadSettings();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [server, session]);
 
   useEffect(() => {
     if (server) {
@@ -50,11 +70,25 @@ export function JudgePage() {
     return () => channel.close();
   }, [server, session]);
 
-  async function decide(decision: RecognitionDecision) {
+  async function updateCheckingEnabled(enabled: boolean) {
+    setCheckingEnabled(enabled);
+    await setPictureCheckingEnabled(enabled);
+    setLastDecision(enabled ? 'Picture checking enabled' : 'Picture checking disabled');
+  }
+
+  async function markCorrect() {
     if (!request) return;
 
-    await sendRecognitionDecision(request, decision);
-    setLastDecision(decision === 'correct' ? 'Marked correct' : 'Marked wrong');
+    await sendRecognitionDecision(request, { decision: 'correct' });
+    setLastDecision('Marked correct');
+    setRequest(null);
+  }
+
+  async function sendWrongHint(hint: DirectionHint) {
+    if (!request) return;
+
+    await sendRecognitionDecision(request, { decision: 'wrong', hint });
+    setLastDecision(hintCopy[hint]);
     setRequest(null);
   }
 
@@ -65,21 +99,61 @@ export function JudgePage() {
         <h1>{request ? request.challengeTitle : 'Waiting for photo submit'}</h1>
         <p className="judge-session">Session: {session}</p>
 
-        {request ? (
+        <label className="judge-toggle">
+          <input
+            type="checkbox"
+            checked={checkingEnabled}
+            onChange={(event) => updateCheckingEnabled(event.currentTarget.checked)}
+          />
+          <span>
+            <strong>Picture checking</strong>
+            <em>{checkingEnabled ? 'Enabled' : 'Disabled by default'}</em>
+          </span>
+        </label>
+
+        {request && checkingEnabled ? (
           <div className="judge-actions">
-            <button className="judge-button correct" onClick={() => decide('correct')} type="button">
+            <button className="judge-button correct" onClick={markCorrect} type="button">
               <Check size={28} />
               Correct
             </button>
-            <button className="judge-button wrong" onClick={() => decide('wrong')} type="button">
+            <button className="judge-button wrong" onClick={() => sendWrongHint('forward')} type="button">
               <X size={28} />
-              Wrong
+              Look forward!
+              <span>It's in front of you</span>
+            </button>
+            <button className="judge-button wrong" onClick={() => sendWrongHint('backward')} type="button">
+              <X size={28} />
+              Look backward!
+              <span>It's behind you</span>
+            </button>
+            <button className="judge-button wrong" onClick={() => sendWrongHint('left')} type="button">
+              <X size={28} />
+              Look left!
+              <span>It's on your left</span>
+            </button>
+            <button className="judge-button wrong" onClick={() => sendWrongHint('right')} type="button">
+              <X size={28} />
+              Look right!
+              <span>It's on your right</span>
             </button>
           </div>
         ) : (
-          <p className="judge-waiting">{lastDecision ?? 'Submit a captured photo on the visitor app.'}</p>
+          <p className="judge-waiting">
+            {lastDecision ??
+              (checkingEnabled
+                ? 'Submit a captured photo on the visitor app.'
+                : 'Visitor photo submits will continue automatically.')}
+          </p>
         )}
       </section>
     </main>
   );
 }
+
+const hintCopy: Record<DirectionHint, string> = {
+  forward: "Look forward! It's in front of you",
+  backward: "Look backward! It's behind you",
+  left: "Look left! It's on your left",
+  right: "Look right! It's on your right",
+};

@@ -4,6 +4,7 @@ const port = Number(process.env.PORT || 8787);
 const clients = new Map();
 const pendingRequests = new Map();
 const decisions = new Map();
+const settings = new Map();
 
 function send(res, event, data) {
   res.write(`event: ${event}\n`);
@@ -91,14 +92,41 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  if (req.method === 'GET' && url.pathname === '/settings') {
+    const session = url.searchParams.get('session') || 'field-journal';
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(
+      JSON.stringify({
+        pictureCheckingEnabled: Boolean(settings.get(session)?.pictureCheckingEnabled),
+      }),
+    );
+    return;
+  }
+
+  if (req.method === 'POST' && url.pathname === '/settings') {
+    const body = await readJson(req);
+    const session = body.session || 'field-journal';
+    settings.set(session, {
+      pictureCheckingEnabled: Boolean(body.pictureCheckingEnabled),
+    });
+    broadcast(session, 'settings', settings.get(session));
+    res.writeHead(204);
+    res.end();
+    return;
+  }
+
   if (req.method === 'POST' && url.pathname === '/decision') {
     const body = await readJson(req);
     const session = body.session || 'field-journal';
     pendingRequests.delete(session);
-    decisions.set(body.requestId, body.decision);
+    decisions.set(body.requestId, {
+      decision: body.decision,
+      hint: body.hint,
+    });
     broadcast(session, 'decision', {
       requestId: body.requestId,
       decision: body.decision,
+      hint: body.hint,
     });
     res.writeHead(204);
     res.end();
@@ -107,14 +135,14 @@ const server = http.createServer(async (req, res) => {
 
   if (req.method === 'GET' && url.pathname === '/decision') {
     const requestId = url.searchParams.get('requestId');
-    const decision = requestId ? decisions.get(requestId) : null;
+    const result = requestId ? decisions.get(requestId) : null;
 
-    if (requestId && decision) {
+    if (requestId && result) {
       decisions.delete(requestId);
     }
 
     res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify(decision ? { requestId, decision } : null));
+    res.end(JSON.stringify(result ? { requestId, ...result } : null));
     return;
   }
 
