@@ -27,7 +27,7 @@ export function HomePage({
           Explore the exhibition, discover artifacts, and unlock pages of your field journal as you
           complete museum challenges.
         </p>
-        <div className="paper-tilt">☠</div>
+        <div className="paper-tilt"></div>
       </motion.div>
 
       <button className="primary-button" onClick={onStart} type="button">

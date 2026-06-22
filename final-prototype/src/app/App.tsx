@@ -8,8 +8,9 @@ import { CollectionPage } from '../pages/CollectionPage';
 import { ChallengePage } from '../pages/ChallengePage';
 import { JudgePage } from '../pages/JudgePage';
 import { RegistrationPage } from '../pages/RegistrationPage';
+import { OnboardingPage, VisitorProfile } from '../pages/OnboardingPage';
 
-type Screen = 'register' | 'home' | 'map' | 'collection' | 'challenge';
+type Screen = 'register' | 'onboarding' | 'home' | 'map' | 'collection' | 'challenge';
 
 export default function App() {
   if (new URLSearchParams(window.location.search).has('judge')) {
@@ -17,6 +18,7 @@ export default function App() {
   }
 
   const [visitorName, setVisitorName] = useState('');
+  const [, setVisitorProfile] = useState<VisitorProfile | null>(null);
   const [screen, setScreen] = useState<Screen>('register');
   const [activeIndex, setActiveIndex] = useState(0);
   const [mapIndex, setMapIndex] = useState(0);
@@ -51,13 +53,22 @@ export default function App() {
 
   function registerVisitor(name: string) {
     setVisitorName(name);
+    setScreen('onboarding');
+  }
+
+  function completeOnboarding(profile: VisitorProfile) {
+    setVisitorProfile(profile);
     setScreen('home');
   }
 
   return (
     <main className="app-shell">
-      <div className={`phone ${isMapScreen ? 'map-mode' : ''} ${screen === 'register' ? 'register-mode' : ''}`}>
-        {!isMapScreen && screen !== 'register' && (
+      <div
+        className={`phone ${isMapScreen ? 'map-mode' : ''} ${
+          screen === 'register' || screen === 'onboarding' ? 'register-mode' : ''
+        }`}
+      >
+        {!isMapScreen && screen !== 'register' && screen !== 'onboarding' && (
           <header className={`top-bar ${screen === 'home' ? 'home-top-bar' : ''}`}>
             {screen !== 'home' ? (
               <button
@@ -92,6 +103,7 @@ export default function App() {
             exit={{ opacity: 0, y: -18 }}
           >
             {screen === 'register' && <RegistrationPage onRegister={registerVisitor} />}
+            {screen === 'onboarding' && <OnboardingPage onComplete={completeOnboarding} />}
             {screen === 'home' && (
               <HomePage
                 visitorName={visitorName}

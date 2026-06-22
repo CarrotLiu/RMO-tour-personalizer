@@ -234,8 +234,7 @@ img {
   margin-top: 4px;
 }
 
-.registration-check,
-.registration-start {
+.registration-check {
   position: relative;
   border: 2px solid #6f5c34;
   border-radius: 50%;
@@ -245,8 +244,7 @@ img {
   color: #6f5c34;
 }
 
-.registration-check::after,
-.registration-start::after {
+.registration-check::after {
   content: "";
   position: absolute;
   inset: -8px;
@@ -261,27 +259,170 @@ img {
   flex: 0 0 auto;
 }
 
-.registration-start {
+.onboarding-page {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 54px 22px 30px;
+  color: #6d5a35;
+}
+
+.onboarding-panel {
+  width: min(100%, 342px);
+  margin: 0 auto;
+  border-radius: 18px;
+  padding: 28px 22px;
+  background: rgba(255, 248, 222, 0.54);
+  box-shadow:
+    inset 0 0 0 1px rgba(109, 90, 53, 0.1),
+    0 18px 46px rgba(109, 90, 53, 0.11);
+}
+
+.tutorial-step {
+  min-height: 390px;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 18px;
+  text-align: center;
+}
+
+.tutorial-icon {
   width: 82px;
   height: 82px;
-  border-width: 3px;
-  opacity: 1;
-}
-
-.registration-start:disabled {
-  opacity: 0.42;
-}
-
-.registration-start:disabled::after {
-  animation-play-state: paused;
-  opacity: 0;
-}
-
-.registration-start-ring {
-  width: 34px;
-  height: 34px;
-  border: 3px solid currentColor;
+  border: 2px solid rgba(111, 92, 52, 0.68);
   border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: #6f5c34;
+}
+
+.tutorial-step h2,
+.choice-step h2 {
+  margin: 0;
+  color: #695631;
+  font-family: "Caveat", cursive;
+  font-size: 36px;
+  line-height: 1.05;
+}
+
+.tutorial-step p,
+.choice-step > p {
+  margin: 0;
+  color: rgba(88, 72, 39, 0.82);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.choice-step {
+  min-height: 390px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.choice-list {
+  display: grid;
+  gap: 10px;
+  overflow-y: auto;
+  padding: 2px 2px 4px;
+}
+
+.choice-button {
+  width: 100%;
+  border: 1px solid rgba(111, 92, 52, 0.18);
+  border-radius: 10px;
+  padding: 14px 15px;
+  background: rgba(255, 252, 238, 0.54);
+  color: #6d5a35;
+  text-align: left;
+  box-shadow: 0 8px 22px rgba(109, 90, 53, 0.08);
+}
+
+.choice-button span {
+  display: block;
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.choice-button small {
+  display: block;
+  margin-top: 5px;
+  color: rgba(88, 72, 39, 0.72);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.choice-button.is-selected,
+.aspect-chip.is-selected {
+  border-color: rgba(111, 92, 52, 0.6);
+  background: rgba(244, 225, 174, 0.96);
+  box-shadow:
+    0 0 0 3px rgba(214, 170, 74, 0.18),
+    0 12px 26px rgba(109, 90, 53, 0.14);
+}
+
+.aspect-chip-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.aspect-chip {
+  border: 1px solid rgba(111, 92, 52, 0.2);
+  border-radius: 999px;
+  padding: 10px 14px;
+  background: rgba(255, 252, 238, 0.54);
+  color: #6d5a35;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.onboarding-footer {
+  width: min(100%, 342px);
+  margin: 0 auto;
+  display: grid;
+  gap: 16px;
+}
+
+.onboarding-progress {
+  display: flex;
+  justify-content: center;
+  gap: 7px;
+}
+
+.onboarding-progress span {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgba(111, 92, 52, 0.24);
+}
+
+.onboarding-progress span.is-active {
+  background: #6f5c34;
+}
+
+.onboarding-next {
+  width: 100%;
+  min-height: 54px;
+  border: 1px solid rgba(111, 92, 52, 0.38);
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  background: #6f5c34;
+  color: #fff7de;
+  font-size: 15px;
+  font-weight: 800;
+  box-shadow: 0 14px 28px rgba(109, 90, 53, 0.2);
+}
+
+.onboarding-next:disabled {
+  opacity: 0.42;
 }
 
 @keyframes start-ripple {

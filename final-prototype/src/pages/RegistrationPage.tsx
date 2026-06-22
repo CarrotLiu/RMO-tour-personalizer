@@ -54,18 +54,6 @@ export function RegistrationPage({ onRegister }: { onRegister: (name: string) =>
         <p className="registration-line">a brave traveler,</p>
         <p className="registration-line">to document the traces of the past</p>
       </motion.div>
-
-      <motion.button
-        className="registration-start"
-        type="submit"
-        aria-label="Start field journal"
-        disabled={!name.trim()}
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ delay: 0.22, duration: 0.3 }}
-      >
-        <span className="registration-start-ring" />
-      </motion.button>
     </form>
   );
 }
