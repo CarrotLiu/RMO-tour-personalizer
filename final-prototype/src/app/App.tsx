@@ -9,14 +9,24 @@ import { ChallengePage } from '../pages/ChallengePage';
 import { JudgePage } from '../pages/JudgePage';
 import { RegistrationPage } from '../pages/RegistrationPage';
 import { OnboardingPage, VisitorProfile } from '../pages/OnboardingPage';
+import {
+  saveAcceptedArtifactPhoto,
+  saveVisitorProfile,
+  saveVisitorRegistration,
+} from './firebaseJournal';
 
 type Screen = 'register' | 'onboarding' | 'home' | 'map' | 'collection' | 'challenge';
+
+function createSessionId() {
+  return crypto.randomUUID?.() ?? `visitor-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
 
 export default function App() {
   if (new URLSearchParams(window.location.search).has('judge')) {
     return <JudgePage />;
   }
 
+  const [visitorSessionId] = useState(createSessionId);
   const [visitorName, setVisitorName] = useState('');
   const [, setVisitorProfile] = useState<VisitorProfile | null>(null);
   const [screen, setScreen] = useState<Screen>('register');
@@ -53,11 +63,17 @@ export default function App() {
 
   function registerVisitor(name: string) {
     setVisitorName(name);
+    void saveVisitorRegistration({ sessionId: visitorSessionId, username: name }).catch((error) => {
+      console.warn('Unable to save visitor registration to Firebase.', error);
+    });
     setScreen('onboarding');
   }
 
   function completeOnboarding(profile: VisitorProfile) {
     setVisitorProfile(profile);
+    void saveVisitorProfile(visitorSessionId, profile).catch((error) => {
+      console.warn('Unable to save visitor profile to Firebase.', error);
+    });
     setScreen('home');
   }
 
@@ -131,6 +147,14 @@ export default function App() {
                 challenge={activeChallenge}
                 completed={completed.includes(activeChallenge.id)}
                 onComplete={() => completeChallenge(activeChallenge.id)}
+                onAcceptedPhoto={(photoDataUrl) =>
+                  saveAcceptedArtifactPhoto({
+                    sessionId: visitorSessionId,
+                    username: visitorName,
+                    challenge: activeChallenge,
+                    photoDataUrl,
+                  })
+                }
               />
             )}
           </motion.section>

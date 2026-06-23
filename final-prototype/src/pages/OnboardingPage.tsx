@@ -1,76 +1,475 @@
-import { useMemo, useState } from 'react';
-import type { ReactNode } from 'react';
-import { motion } from 'framer-motion';
-import { Camera, Check, Move, Sparkles } from 'lucide-react';
+import { useMemo, useRef, useState } from 'react';
+import type { KeyboardEvent as ReactKeyboardEvent, PointerEvent as ReactPointerEvent, ReactNode } from 'react';
+import { motion, PanInfo, useDragControls } from 'framer-motion';
+import { Check, ChevronLeft, ChevronRight, Globe, Sparkles } from 'lucide-react';
 
-type MuseumId = 'rmo' | 'rijksmuseum' | 'mauritshuis';
+type MuseumId = 'rmo' | 'haarlem';
 type MotivationId = 'explore' | 'knowledge' | 'fun' | 'social';
 
 export type VisitorProfile = {
   museum: MuseumId;
   exhibition: string;
-  motivation: MotivationId;
-  aspect?: string;
+  motivation: MotivationId[];
+  aspect?: string[];
   challengeFormat: 'image' | 'text' | 'both';
 };
 
-type StepId = 'tutorial-capture' | 'tutorial-drag' | 'museum' | 'exhibition' | 'motivation' | 'aspect' | 'format';
+type StepId = 'museum' | 'exhibition' | 'motivation' | 'aspect' | 'format' | 'print-choice';
+type MuseumOptionId = 'rmo' | 'haarlem';
+type ExhibitionOptionId = 'netherlands' | 'egypt' | 'classical' | 'middle-east';
+type FormatOptionId = VisitorProfile['challengeFormat'];
+type AspectOptionId =
+  | 'trade'
+  | 'power'
+  | 'rituals'
+  | 'farming'
+  | 'fashion'
+  | 'daily-life'
+  | 'technology'
+  | 'all-aspects';
+type SelectableOptionId = MuseumOptionId | ExhibitionOptionId | MotivationId | AspectOptionId | FormatOptionId;
 
-const museums: { id: MuseumId; label: string; exhibitions: string[] }[] = [
+const museums: { id: MuseumId; label: string; shortLabel: string; available: boolean; exhibitions: string[] }[] = [
   {
     id: 'rmo',
-    label: 'Rijksmuseum van Oudheden',
-    exhibitions: ['Archaeology of the Netherlands', 'Egypt', 'Classical World'],
+    label: 'The National Museum of Antiques (Rijksmuseum van Oudheden)',
+    shortLabel: 'The National Museum of Antiques (RMO)',
+    available: true,
+    exhibitions: ['The Archeology of the Netherlands'],
   },
   {
-    id: 'rijksmuseum',
-    label: 'Rijksmuseum',
-    exhibitions: ['Gallery of Honour', 'Special Collections', 'Asian Pavilion'],
+    id: 'haarlem',
+    label: 'Archeological Museum Haarlem',
+    shortLabel: 'Archeological Museum Haarlem',
+    available: false,
+    exhibitions: [],
+  },
+];
+
+const motivations: { id: MotivationId; label: string; detail: string; tone: 'olive' | 'rust' | 'blue' | 'purple' }[] = [
+  {
+    id: 'social',
+    label: 'visit highlighted collections',
+    detail: "I want to see the museum's most important or unique collections about early history of the Netherlands.",
+    tone: 'olive',
   },
   {
-    id: 'mauritshuis',
-    label: 'Mauritshuis',
-    exhibitions: ['Dutch Masters', 'Vermeer', 'Royal Cabinet'],
+    id: 'explore',
+    label: 'explore interesting things and expand my horizon',
+    detail: 'I want to discover new ideas, cultures, perspectives, and topics that broaden my mind and curiosity.',
+    tone: 'rust',
+  },
+  {
+    id: 'knowledge',
+    label: 'learn specific knowledge',
+    detail: 'I want to gain deeper insights / knowledge about specific aspects of early Dutch histories / archeology',
+    tone: 'blue',
+  },
+  {
+    id: 'fun',
+    label: 'relax and wander around',
+    detail: 'I want to refresh my brain and have fun, taking in the surroundings and exhibits at a leisurely pace.',
+    tone: 'purple',
   },
 ];
 
-const motivations: { id: MotivationId; label: string; detail: string }[] = [
-  { id: 'explore', label: 'Explore freely', detail: 'I want to wander and discover surprises.' },
-  { id: 'knowledge', label: 'Learn specific knowledge', detail: 'I want focused stories about certain topics.' },
-  { id: 'fun', label: 'Have a playful visit', detail: 'I prefer light challenges and game-like moments.' },
-  { id: 'social', label: 'Share with others', detail: 'I want things I can discuss with my group.' },
+const formats: {
+  id: FormatOptionId;
+  label: string;
+  answerLabel: string;
+  detail: string;
+  tone: 'rust' | 'blue' | 'green';
+}[] = [
+  {
+    id: 'image',
+    label: 'using images and visual clues',
+    answerLabel: 'using images and visual clues',
+    detail: 'spotting details, matching images, and solving visual puzzles.',
+    tone: 'rust',
+  },
+  {
+    id: 'text',
+    label: 'using text and written clues',
+    answerLabel: 'using text and written clues',
+    detail: 'reading clues, interpreting information, and answering questions based on descriptions.',
+    tone: 'blue',
+  },
+  {
+    id: 'both',
+    label: 'using both visual and textual clues',
+    answerLabel: 'using both visual and textual clues',
+    detail: 'A combination of visual puzzles and textual reasoning',
+    tone: 'green',
+  },
 ];
 
-const aspects = ['Trade', 'Power', 'Farming', 'Ritual', 'Fashion', 'Daily life', 'Technology'];
-
-const formats: { id: VisitorProfile['challengeFormat']; label: string; detail: string }[] = [
-  { id: 'image', label: 'Image', detail: 'Sketches, visual matching, and object placement.' },
-  { id: 'text', label: 'Text', detail: 'Reading clues and filling missing words.' },
-  { id: 'both', label: 'Both', detail: 'A balanced mix of image and text challenges.' },
+const aspectOptions: {
+  id: AspectOptionId;
+  label: string;
+  answerLabel: string;
+  detail: string;
+  image: string;
+  tone: 'olive' | 'rust' | 'blue' | 'green' | 'purple' | 'pink' | 'sky' | 'orange';
+}[] = [
+  {
+    id: 'trade',
+    label: 'Trade & Exchange',
+    answerLabel: 'trade & exchange',
+    detail: 'economy, market, cross-cultural transaction',
+    image: '/assets/aspects/trade&exchange.png',
+    tone: 'olive',
+  },
+  {
+    id: 'power',
+    label: 'Power & Authority',
+    answerLabel: 'power & authority',
+    detail: 'ruling, hierarchy, military, empire',
+    image: '/assets/aspects/power&authority.png',
+    tone: 'rust',
+  },
+  {
+    id: 'rituals',
+    label: 'Rituals & Beliefs',
+    answerLabel: 'rituals & beliefs',
+    detail: 'burial, religion, animal/human remains',
+    image: '/assets/aspects/rituals&beliefs.png',
+    tone: 'blue',
+  },
+  {
+    id: 'farming',
+    label: 'Survival & Farming',
+    answerLabel: 'survival & farming',
+    detail: 'farming, hunting, agriculture, livestock',
+    image: '/assets/aspects/survival&farming.png',
+    tone: 'green',
+  },
+  {
+    id: 'fashion',
+    label: 'Fashion & Identity',
+    answerLabel: 'fashion & identity',
+    detail: 'jewelry, clothing, cosmetics',
+    image: '/assets/aspects/fashion&identity.png',
+    tone: 'purple',
+  },
+  {
+    id: 'daily-life',
+    label: 'Social & Daily Life',
+    answerLabel: 'social & daily life',
+    detail: 'furniture, leisure, domestic life, education',
+    image: '/assets/aspects/social&dailylife.png',
+    tone: 'pink',
+  },
+  {
+    id: 'technology',
+    label: 'Technology & Craftsmanship',
+    answerLabel: 'technology & craftsmanship',
+    detail: 'tools, materials, craftsmanship',
+    image: '/assets/aspects/technology&craftsmanship.png',
+    tone: 'sky',
+  },
+  {
+    id: 'all-aspects',
+    label: 'All The Aspects',
+    answerLabel: 'all the aspects',
+    detail: 'all the aspects mentioned above',
+    image: '',
+    tone: 'orange',
+  },
 ];
+
+const exhibitionOptions: {
+  id: ExhibitionOptionId;
+  label: string;
+  answerLabel: string;
+  available: boolean;
+  details?: string;
+  link?: string;
+  tone: 'olive' | 'rust' | 'blue' | 'green';
+}[] = [
+  {
+    id: 'netherlands',
+    label: 'The Archeology of the Netherlands',
+    answerLabel: 'The Archeology of the Netherlands',
+    available: true,
+    details:
+      'Exhibits Dutch discoveries begins in early prehistory, leads through the Roman period, followed by the early and late Middle Ages, and ends in the modern era.',
+    link: 'the-archeology-of-the-netherlands',
+    tone: 'olive',
+  },
+  {
+    id: 'egypt',
+    label: 'Egypt & Nubia',
+    answerLabel: 'Egypt & Nubia',
+    available: false,
+    tone: 'rust',
+  },
+  {
+    id: 'classical',
+    label: 'Classical World',
+    answerLabel: 'Classical World',
+    available: false,
+    tone: 'blue',
+  },
+  {
+    id: 'middle-east',
+    label: 'The Ancient Middle East',
+    answerLabel: 'The Ancient Middle East',
+    available: false,
+    tone: 'green',
+  },
+];
+
+function pointInRect(point: { x: number; y: number }, rect: DOMRect | null) {
+  if (!rect) return false;
+  return point.x >= rect.left && point.x <= rect.right && point.y >= rect.top && point.y <= rect.bottom;
+}
 
 export function OnboardingPage({ onComplete }: { onComplete: (profile: VisitorProfile) => void }) {
-  const [step, setStep] = useState<StepId>('tutorial-capture');
+  const [step, setStep] = useState<StepId>('museum');
   const [museum, setMuseum] = useState<MuseumId | null>(null);
+  const [museumCompleted, setMuseumCompleted] = useState(false);
+  const [museumHovering, setMuseumHovering] = useState(false);
+  const [museumWrong, setMuseumWrong] = useState(false);
   const [exhibition, setExhibition] = useState('');
-  const [motivation, setMotivation] = useState<MotivationId | null>(null);
-  const [aspect, setAspect] = useState('');
+  const [exhibitionHovering, setExhibitionHovering] = useState(false);
+  const [exhibitionWrong, setExhibitionWrong] = useState(false);
+  const [motivationsSelected, setMotivationsSelected] = useState<MotivationId[]>([]);
+  const [motivationHovering, setMotivationHovering] = useState(false);
+  const [motivationWrong, setMotivationWrong] = useState(false);
+  const [aspectsSelected, setAspectsSelected] = useState<AspectOptionId[]>([]);
+  const [aspectHovering, setAspectHovering] = useState(false);
+  const [aspectWrong, setAspectWrong] = useState(false);
   const [challengeFormat, setChallengeFormat] = useState<VisitorProfile['challengeFormat'] | null>(null);
+  const [formatHovering, setFormatHovering] = useState(false);
+  const [formatWrong, setFormatWrong] = useState(false);
+  const museumDropRef = useRef<HTMLSpanElement>(null);
+  const exhibitionDropRef = useRef<HTMLSpanElement>(null);
+  const motivationDropRef = useRef<HTMLSpanElement>(null);
+  const aspectDropRef = useRef<HTMLSpanElement>(null);
+  const formatDropRef = useRef<HTMLSpanElement>(null);
 
   const selectedMuseum = useMemo(
     () => museums.find((item) => item.id === museum) ?? null,
     [museum],
   );
+  const selectedFormat = useMemo(
+    () => formats.find((item) => item.id === challengeFormat) ?? null,
+    [challengeFormat],
+  );
+  function museumDropRect() {
+    return museumDropRef.current?.getBoundingClientRect() ?? null;
+  }
+
+  function exhibitionDropRect() {
+    return exhibitionDropRef.current?.getBoundingClientRect() ?? null;
+  }
+
+  function motivationDropRect() {
+    return motivationDropRef.current?.getBoundingClientRect() ?? null;
+  }
+
+  function aspectDropRect() {
+    return aspectDropRef.current?.getBoundingClientRect() ?? null;
+  }
+
+  function formatDropRect() {
+    return formatDropRef.current?.getBoundingClientRect() ?? null;
+  }
+
+  function chooseMuseum(optionId: MuseumOptionId) {
+    const option = museums.find((item) => item.id === optionId);
+    if (!option?.available) {
+      setMuseumWrong(true);
+      window.setTimeout(() => setMuseumWrong(false), 1200);
+      return;
+    }
+
+    setMuseum(option.id);
+    setMuseumCompleted(true);
+    setMuseumHovering(false);
+  }
+
+  function chooseExhibition(optionId: ExhibitionOptionId) {
+    const option = exhibitionOptions.find((item) => item.id === optionId);
+    if (!option?.available) {
+      setExhibitionWrong(true);
+      window.setTimeout(() => setExhibitionWrong(false), 1200);
+      return;
+    }
+
+    setExhibition(option.answerLabel);
+    setExhibitionHovering(false);
+  }
+
+  function chooseMotivation(optionId: MotivationId) {
+    setMotivationsSelected((current) => {
+      if (current.includes(optionId)) return current;
+      if (current.length >= 2) {
+        setMotivationWrong(true);
+        window.setTimeout(() => setMotivationWrong(false), 1200);
+        return current;
+      }
+      setMotivationHovering(false);
+      return [...current, optionId];
+    });
+  }
+
+  function showAspectLockedError() {
+    setAspectWrong(true);
+    window.setTimeout(() => setAspectWrong(false), 1400);
+  }
+
+  function chooseAspect(optionId: AspectOptionId) {
+    setAspectsSelected((current) => {
+      if (current.includes('all-aspects') && optionId !== 'all-aspects') {
+        showAspectLockedError();
+        return current;
+      }
+      if (optionId === 'all-aspects') {
+        setAspectHovering(false);
+        return ['all-aspects'];
+      }
+      if (current.includes(optionId)) return current;
+
+      const regularSelections = current.filter((item) => item !== 'all-aspects');
+      if (regularSelections.length >= 6) {
+        setAspectHovering(false);
+        return ['all-aspects'];
+      }
+
+      setAspectHovering(false);
+      return [...regularSelections, optionId];
+    });
+  }
+
+  function chooseFormat(optionId: FormatOptionId) {
+    if (challengeFormat && challengeFormat !== optionId) {
+      setFormatWrong(true);
+      window.setTimeout(() => setFormatWrong(false), 1400);
+      return;
+    }
+    setChallengeFormat(optionId);
+    setFormatHovering(false);
+  }
+
+  function profilePayload(): VisitorProfile | null {
+    if (!museum || !exhibition || motivationsSelected.length === 0 || !challengeFormat) return null;
+
+    return {
+      museum,
+      exhibition,
+      motivation: motivationsSelected,
+      aspect: aspectsSelected.map(
+        (item) => aspectOptions.find((option) => option.id === item)?.answerLabel ?? item,
+      ),
+      challengeFormat,
+    };
+  }
+
+  function completeOnboarding() {
+    const profile = profilePayload();
+    if (!profile) return;
+    onComplete(profile);
+  }
+
+  function downloadBlob(filename: string, blob: Blob) {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 500);
+  }
+
+  function downloadMapPdf() {
+    const pdf = `%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 420 594] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>
+endobj
+4 0 obj
+<< /Length 126 >>
+stream
+BT
+/F1 24 Tf
+72 500 Td
+(My Field Journal Map) Tj
+/F1 14 Tf
+0 -34 Td
+(Print this physical map before your museum visit.) Tj
+ET
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000241 00000 n 
+0000000418 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+488
+%%EOF`;
+    downloadBlob('my-field-journal-map.pdf', new Blob([pdf], { type: 'application/pdf' }));
+  }
+
+  function downloadMuseumQr() {
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="640" height="640" viewBox="0 0 640 640">
+  <rect width="640" height="640" fill="#fff8df"/>
+  <text x="320" y="76" text-anchor="middle" font-family="Arial, sans-serif" font-size="30" font-weight="700" fill="#6d5a35">My Field Journal</text>
+  <g transform="translate(112 112)" fill="#111827">
+    <rect width="416" height="416" rx="24" fill="#fff"/>
+    <path d="M32 32h112v112H32zM272 32h112v112H272zM32 272h112v112H32z"/>
+    <path fill="#fff" d="M60 60h56v56H60zM300 60h56v56h-56zM60 300h56v56H60z"/>
+    <path d="M184 56h32v32h-32zM224 56h32v72h-32zM176 136h72v32h-72zM280 176h32v32h-32zM328 176h56v32h-56zM176 216h32v80h-32zM224 216h88v32h-88zM344 240h40v40h-40zM224 288h32v32h-32zM280 288h64v32h-64zM176 344h32v40h-32zM240 352h32v32h-32zM296 344h88v40h-88z"/>
+  </g>
+  <text x="320" y="576" text-anchor="middle" font-family="Arial, sans-serif" font-size="22" fill="#6d5a35">Show this at the museum to print your map</text>
+</svg>`;
+    downloadBlob('museum-map-qr.svg', new Blob([svg], { type: 'image/svg+xml' }));
+  }
+
+  function choosePrintOption(option: 'continue' | 'home' | 'museum') {
+    if (option === 'home') downloadMapPdf();
+    if (option === 'museum') downloadMuseumQr();
+    completeOnboarding();
+  }
+
+  function goBack() {
+    if (step === 'print-choice') {
+      setStep('format');
+      return;
+    }
+    if (step === 'format') {
+      setStep('aspect');
+      return;
+    }
+    if (step === 'aspect') {
+      setStep('motivation');
+      return;
+    }
+    if (step === 'motivation') {
+      setStep('exhibition');
+      return;
+    }
+    if (step === 'exhibition') {
+      setStep('museum');
+    }
+  }
 
   function goNext() {
-    if (step === 'tutorial-capture') {
-      setStep('tutorial-drag');
-      return;
-    }
-    if (step === 'tutorial-drag') {
-      setStep('museum');
-      return;
-    }
     if (step === 'museum' && museum) {
       setExhibition('');
       setStep('exhibition');
@@ -80,149 +479,587 @@ export function OnboardingPage({ onComplete }: { onComplete: (profile: VisitorPr
       setStep('motivation');
       return;
     }
-    if (step === 'motivation' && motivation) {
-      setStep(motivation === 'knowledge' ? 'aspect' : 'format');
+    if (step === 'motivation' && motivationsSelected.length > 0) {
+      setStep('aspect');
       return;
     }
-    if (step === 'aspect' && aspect) {
+    if (step === 'aspect' && aspectsSelected.length > 0) {
       setStep('format');
       return;
     }
-    if (step === 'format' && museum && exhibition && motivation && challengeFormat) {
-      onComplete({
-        museum,
-        exhibition,
-        motivation,
-        aspect: motivation === 'knowledge' ? aspect : undefined,
-        challengeFormat,
-      });
+    if (step === 'format' && challengeFormat) {
+      setStep('print-choice');
     }
   }
 
   function canContinue() {
-    if (step.startsWith('tutorial')) return true;
     if (step === 'museum') return Boolean(museum);
     if (step === 'exhibition') return Boolean(exhibition);
-    if (step === 'motivation') return Boolean(motivation);
-    if (step === 'aspect') return Boolean(aspect);
+    if (step === 'motivation') return motivationsSelected.length > 0;
+    if (step === 'aspect') return aspectsSelected.length > 0;
+    if (step === 'print-choice') return false;
     return Boolean(challengeFormat);
   }
 
   return (
-    <div className="onboarding-page">
-      <motion.div
-        key={step}
-        className="onboarding-panel"
-        initial={{ opacity: 0, y: 18 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.28, ease: 'easeOut' }}
-      >
-        {step === 'tutorial-capture' && (
-          <TutorialStep
-            icon={<Camera size={34} />}
-            title="Capture the artifact"
-            copy="Each challenge starts by taking a photo of the object you found in the museum."
-          />
-        )}
+    <div
+      className={`onboarding-page profiling-page ${
+        step === 'museum' || step === 'exhibition' ? 'museum-tutorial-page' : ''
+      }`}
+    >
+      {step === 'museum' ? (
+        <>
+          {museumCompleted && (
+            <p className="museum-tutorial-note deselect-note">
+              Click the filled-in option to deselect
+              <span aria-hidden="true">↓</span>
+            </p>
+          )}
+          {museumWrong && <p className="museum-unavailable-note">Sorry! This museum is not yet ready...</p>}
 
-        {step === 'tutorial-drag' && (
-          <TutorialStep
-            icon={<Move size={34} />}
-            title="Long press and drag"
-            copy="Hold an answer card, drag it into the highlighted gap, and release it to solve the page."
-          />
-        )}
-
-        {step === 'museum' && (
-          <ChoiceStep title="Choose museum" subtitle="Where are you visiting today?">
-            {museums.map((item) => (
-              <ChoiceButton
-                key={item.id}
-                selected={museum === item.id}
-                label={item.label}
-                onClick={() => setMuseum(item.id)}
-              />
-            ))}
-          </ChoiceStep>
-        )}
-
-        {step === 'exhibition' && selectedMuseum && (
-          <ChoiceStep title="Choose exhibition" subtitle={`Inside ${selectedMuseum.label}`}>
-            {selectedMuseum.exhibitions.map((item) => (
-              <ChoiceButton
-                key={item}
-                selected={exhibition === item}
-                label={item}
-                onClick={() => setExhibition(item)}
-              />
-            ))}
-          </ChoiceStep>
-        )}
-
-        {step === 'motivation' && (
-          <ChoiceStep title="What brings you here?" subtitle="This helps shape your field journal.">
-            {motivations.map((item) => (
-              <ChoiceButton
-                key={item.id}
-                selected={motivation === item.id}
-                label={item.label}
-                detail={item.detail}
-                onClick={() => setMotivation(item.id)}
-              />
-            ))}
-          </ChoiceStep>
-        )}
-
-        {step === 'aspect' && (
-          <ChoiceStep title="Choose an aspect" subtitle="What kind of knowledge interests you most?">
-            <div className="aspect-chip-grid">
-              {aspects.map((item) => (
+          <motion.div
+            className={`museum-gap-card ${museumCompleted ? 'is-complete' : ''} ${museumWrong ? 'is-wrong' : ''}`}
+            animate={museumWrong ? { x: [0, -8, 8, -4, 4, 0] } : {}}
+          >
+            <p>
+              <span>I'm traveling to</span>
+              {museum && selectedMuseum ? (
                 <button
-                  key={item}
-                  className={`aspect-chip ${aspect === item ? 'is-selected' : ''}`}
-                  onClick={() => setAspect(item)}
+                  className="museum-filled-answer"
+                  onClick={() => {
+                    setMuseum(null);
+                    setMuseumCompleted(false);
+                    setExhibition('');
+                  }}
                   type="button"
                 >
-                  {item}
+                  <span>The National</span>
+                  <span>Museum of Antiques (RMO)</span>
                 </button>
-              ))}
-            </div>
-          </ChoiceStep>
-        )}
+              ) : (
+                <>
+                  <span
+                    ref={museumDropRef}
+                    className={`museum-gap-drop ${museumHovering ? 'is-hovered' : ''}`}
+                  >
+                    <span className="museum-gap-blank">select a museum</span>
+                  </span>
+                </>
+              )}
+              <span>to visit</span>
+              <span className="museum-gap-blank museum-exhibition-placeholder" aria-hidden="true">
+                select an exhibition
+              </span>
+            </p>
+            {museumWrong && <div className="museum-wrong-fill">Archeological Museum Haarlem</div>}
+          </motion.div>
 
-        {step === 'format' && (
-          <ChoiceStep title="Preferred challenge format" subtitle="What kind of challenge feels best?">
-            {formats.map((item) => (
-              <ChoiceButton
-                key={item.id}
-                selected={challengeFormat === item.id}
-                label={item.label}
-                detail={item.detail}
-                onClick={() => setChallengeFormat(item.id)}
+          {!museumCompleted ? (
+            <>
+              <p className="museum-tutorial-note drag-note">
+                Drag the option to the gap to select
+              </p>
+              <div className="museum-option-list">
+                <MuseumOptionCard
+                  id="rmo"
+                  label="The National Museum of Antiques (Rijksmuseum van Oudheden)"
+                  details="An archeological museum that houses ancient discoveries from Egypt, the Classical World, the ancient Near East, and the Netherlands in prehistoric, Roman, and medieval times"
+                  link="rmo.nl"
+                  tone="olive"
+                  getDropRect={museumDropRect}
+                  onHoverChange={setMuseumHovering}
+                  onSelect={(id) => chooseMuseum(id as MuseumOptionId)}
+                />
+                <MuseumOptionCard
+                  id="haarlem"
+                  label="Archeological Museum Haarlem"
+                  tone="rust"
+                  getDropRect={museumDropRect}
+                  onHoverChange={setMuseumHovering}
+                  onSelect={(id) => chooseMuseum(id as MuseumOptionId)}
+                />
+              </div>
+            </>
+          ) : (
+            <div className="museum-complete-copy">
+              <p>Congrats!</p>
+              <p>You have learned how to write a journal page!</p>
+              <span>Enjoy your journey ahead!</span>
+            </div>
+          )}
+        </>
+      ) : step === 'exhibition' && selectedMuseum ? (
+        <>
+          <motion.div
+            className={`museum-gap-card exhibition-gap-card ${exhibition ? 'is-complete' : ''} ${
+              exhibitionWrong ? 'is-wrong' : ''
+            }`}
+            animate={exhibitionWrong ? { x: [0, -8, 8, -4, 4, 0] } : {}}
+          >
+            <p>
+              <span>I'm traveling to</span>
+              <span className="museum-filled-answer static-answer">
+                the National Museum of Antiques
+              </span>
+              <span>to visit</span>
+              {exhibition ? (
+                <button
+                  className="museum-filled-answer exhibition-filled-answer"
+                  onClick={() => setExhibition('')}
+                  type="button"
+                >
+                  {exhibition}
+                </button>
+              ) : (
+                <span
+                  ref={exhibitionDropRef}
+                  className={`museum-gap-drop exhibition-gap-drop ${
+                    exhibitionHovering ? 'is-hovered' : ''
+                  }`}
+                >
+                  <span className="museum-gap-blank exhibition-blank">select an exhibition</span>
+                </span>
+              )}
+            </p>
+          </motion.div>
+
+          <div className="museum-option-list exhibition-option-list">
+            {exhibitionOptions.map((option) => (
+              <MuseumOptionCard
+                key={option.id}
+                id={option.id}
+                label={option.label}
+                details={option.details}
+                link={option.link}
+                tone={option.tone}
+                getDropRect={exhibitionDropRect}
+                onHoverChange={setExhibitionHovering}
+                onSelect={(id) => chooseExhibition(id as ExhibitionOptionId)}
               />
             ))}
-          </ChoiceStep>
-        )}
-      </motion.div>
+          </div>
+        </>
+      ) : step === 'motivation' ? (
+        <>
+          {motivationWrong && <p className="museum-unavailable-note">Select at most 2 motivations!</p>}
 
-      <div className="onboarding-footer">
-        <ProgressDots step={step} />
-        <button className="onboarding-next" disabled={!canContinue()} onClick={goNext} type="button">
-          {step === 'format' ? 'Start journal' : 'Continue'}
-          {step === 'format' ? <Sparkles size={17} /> : <Check size={17} />}
-        </button>
-      </div>
+          <motion.div
+            className={`museum-gap-card motivation-gap-card ${
+              motivationsSelected.length > 0 ? 'is-complete' : ''
+            } ${motivationWrong ? 'is-wrong' : ''}`}
+            animate={motivationWrong ? { x: [0, -8, 8, -4, 4, 0] } : {}}
+          >
+            <p>
+              <span>I want to</span>
+              {motivationsSelected.length === 0 ? (
+                <span
+                  ref={motivationDropRef}
+                  className={`museum-gap-drop motivation-gap-drop ${
+                    motivationHovering ? 'is-hovered' : ''
+                  }`}
+                >
+                  <span className="museum-gap-blank motivation-blank">
+                    choose at most two motivations
+                  </span>
+                </span>
+              ) : (
+                <>
+                  {motivationsSelected.map((item, index) => {
+                    const selected = motivations.find((motivationOption) => motivationOption.id === item);
+                    if (!selected) return null;
+                    return (
+                      <span key={item} className="motivation-answer-group">
+                        {index === 1 && <span>and</span>}
+                        <button
+                          className="museum-filled-answer motivation-filled-answer"
+                          onClick={() =>
+                            setMotivationsSelected((current) =>
+                              current.filter((motivationId) => motivationId !== item),
+                            )
+                          }
+                          type="button"
+                        >
+                          {selected.label}
+                        </button>
+                      </span>
+                    );
+                  })}
+                  {motivationsSelected.length === 1 && (
+                    <>
+                      <span>and</span>
+                      <span
+                        ref={motivationDropRef}
+                        className={`museum-gap-drop motivation-gap-drop ${
+                          motivationHovering ? 'is-hovered' : ''
+                        }`}
+                      >
+                        <span className="museum-gap-blank motivation-blank one-more">
+                          choose one more
+                        </span>
+                      </span>
+                    </>
+                  )}
+                  {motivationsSelected.length === 2 && (
+                    <span
+                      ref={motivationDropRef}
+                      className={`motivation-full-drop ${motivationHovering ? 'is-hovered' : ''}`}
+                      aria-hidden="true"
+                    />
+                  )}
+                </>
+              )}
+              <span>in this exhibition about the past of the Netherlands.</span>
+            </p>
+          </motion.div>
+
+          <div className="museum-option-list motivation-option-list">
+            {motivations
+              .filter((option) => !motivationsSelected.includes(option.id))
+              .map((option) => (
+                <MuseumOptionCard
+                  key={option.id}
+                  id={option.id}
+                  label={option.label}
+                  details={option.detail}
+                  tone={option.tone}
+                  getDropRect={motivationDropRect}
+                  onHoverChange={setMotivationHovering}
+                  onSelect={(id) => chooseMotivation(id as MotivationId)}
+                />
+              ))}
+          </div>
+        </>
+      ) : step === 'aspect' ? (
+        <>
+          {aspectWrong && <p className="museum-unavailable-note">Deselect “all the aspect” please!</p>}
+
+          <motion.div
+            className={`museum-gap-card aspect-gap-card ${
+              aspectsSelected.length > 0 ? 'is-complete' : ''
+            } ${aspectWrong ? 'is-wrong' : ''}`}
+            animate={aspectWrong ? { x: [0, -8, 8, -4, 4, 0] } : {}}
+          >
+            <p>
+              <span>I'm interested in</span>
+              {aspectsSelected.includes('all-aspects') ? (
+                <button
+                  className="museum-filled-answer aspect-filled-answer"
+                  onClick={() => setAspectsSelected([])}
+                  type="button"
+                >
+                  all the aspects
+                </button>
+              ) : aspectsSelected.length === 0 ? (
+                <span
+                  ref={aspectDropRef}
+                  className={`museum-gap-drop aspect-gap-drop ${aspectHovering ? 'is-hovered' : ''}`}
+                >
+                  <span className="museum-gap-blank aspect-blank">
+                    choose all the aspects you are interested in
+                  </span>
+                </span>
+              ) : (
+                <>
+                  {aspectsSelected.map((item, index) => {
+                    const selected = aspectOptions.find((option) => option.id === item);
+                    if (!selected) return null;
+                    return (
+                      <span key={item} className="aspect-answer-group">
+                        {index > 0 && <span>{index === aspectsSelected.length - 1 ? ', and' : ','}</span>}
+                        <button
+                          className="museum-filled-answer aspect-filled-answer"
+                          onClick={() =>
+                            setAspectsSelected((current) =>
+                              current.filter((aspectId) => aspectId !== item),
+                            )
+                          }
+                          type="button"
+                        >
+                          {selected.answerLabel}
+                        </button>
+                      </span>
+                    );
+                  })}
+                  {aspectsSelected.length < 6 && (
+                    <>
+                      <span>{aspectsSelected.length === 1 ? 'and' : ', and'}</span>
+                      <span
+                        ref={aspectDropRef}
+                        className={`museum-gap-drop aspect-gap-drop ${
+                          aspectHovering ? 'is-hovered' : ''
+                        }`}
+                      >
+                        <span className="museum-gap-blank aspect-blank one-more">
+                          choose more...
+                        </span>
+                      </span>
+                    </>
+                  )}
+                  {aspectsSelected.length >= 6 && (
+                    <span
+                      ref={aspectDropRef}
+                      className={`motivation-full-drop ${aspectHovering ? 'is-hovered' : ''}`}
+                      aria-hidden="true"
+                    />
+                  )}
+                </>
+              )}
+              <span>in early Dutch history.</span>
+            </p>
+          </motion.div>
+
+          <div className="museum-option-list aspect-option-list">
+            {aspectOptions
+              .filter((option) =>
+                aspectsSelected.includes('all-aspects')
+                  ? option.id !== 'all-aspects'
+                  : !aspectsSelected.includes(option.id),
+              )
+              .map((option) => (
+                <MuseumOptionCard
+                  key={option.id}
+                  id={option.id}
+                  label={option.label}
+                  details={option.detail}
+                  image={option.image}
+                  tone={option.tone}
+                  getDropRect={aspectDropRect}
+                  onHoverChange={setAspectHovering}
+                  onSelect={(id) => chooseAspect(id as AspectOptionId)}
+                />
+              ))}
+          </div>
+        </>
+      ) : step === 'format' ? (
+        <>
+          {formatWrong && (
+            <p className="museum-unavailable-note">
+              Deselect your current option first to change selection!
+            </p>
+          )}
+
+          <motion.div
+            className={`museum-gap-card format-gap-card ${
+              challengeFormat ? 'is-complete' : ''
+            } ${formatWrong ? 'is-wrong' : ''}`}
+            animate={formatWrong ? { x: [0, -8, 8, -4, 4, 0] } : {}}
+          >
+            <p>
+              <span>I enjoy solving treasure hunt challenges by</span>
+              {selectedFormat ? (
+                <>
+                  <button
+                    className="museum-filled-answer format-filled-answer"
+                    onClick={() => setChallengeFormat(null)}
+                    type="button"
+                  >
+                    {selectedFormat.answerLabel}
+                  </button>
+                  <span
+                    ref={formatDropRef}
+                    className={`motivation-full-drop ${formatHovering ? 'is-hovered' : ''}`}
+                    aria-hidden="true"
+                  />
+                </>
+              ) : (
+                <span
+                  ref={formatDropRef}
+                  className={`museum-gap-drop format-gap-drop ${formatHovering ? 'is-hovered' : ''}`}
+                >
+                  <span className="museum-gap-blank format-blank">
+                    choose your preferred challenge format
+                  </span>
+                </span>
+              )}
+              <span>.</span>
+            </p>
+          </motion.div>
+
+          <div className="museum-option-list format-option-list">
+            {formats
+              .filter((option) => option.id !== challengeFormat)
+              .map((option) => (
+                <MuseumOptionCard
+                  key={option.id}
+                  id={option.id}
+                  label={option.label}
+                  details={option.detail}
+                  tone={option.tone}
+                  getDropRect={formatDropRect}
+                  onHoverChange={setFormatHovering}
+                  onSelect={(id) => chooseFormat(id as FormatOptionId)}
+                />
+              ))}
+          </div>
+        </>
+      ) : step === 'print-choice' ? (
+        <div className="print-choice-page">
+          <button className="print-choice-button rust" type="button" onClick={() => choosePrintOption('continue')}>
+            Continue with this App
+          </button>
+          <button className="print-choice-button blue" type="button" onClick={() => choosePrintOption('home')}>
+            Print a Physical Map at home
+          </button>
+          <button className="print-choice-button green" type="button" onClick={() => choosePrintOption('museum')}>
+            Print a Physical Map at the museum
+          </button>
+        </div>
+      ) : null}
+
+      {step !== 'print-choice' && (
+        <div className="profiling-nav">
+          <button
+            className="profiling-arrow"
+            disabled={step === 'museum'}
+            onClick={goBack}
+            type="button"
+            aria-label="Previous profiling step"
+          >
+            <ChevronLeft size={22} />
+          </button>
+          <button
+            className="profiling-arrow"
+            disabled={!canContinue()}
+            onClick={goNext}
+            type="button"
+            aria-label="Next profiling step"
+          >
+            <ChevronRight size={22} />
+          </button>
+        </div>
+      )}
     </div>
   );
 }
 
-function TutorialStep({ icon, title, copy }: { icon: ReactNode; title: string; copy: string }) {
+function MuseumOptionCard({
+  id,
+  label,
+  details,
+  image,
+  link,
+  tone,
+  getDropRect,
+  onHoverChange,
+  onSelect,
+}: {
+  id: SelectableOptionId;
+  label: string;
+  details?: string;
+  image?: string;
+  link?: string;
+  tone: 'olive' | 'rust' | 'blue' | 'green' | 'purple' | 'pink' | 'sky' | 'orange';
+  getDropRect: () => DOMRect | null;
+  onHoverChange: (isHovering: boolean) => void;
+  onSelect: (id: SelectableOptionId) => void;
+}) {
+  const dragControls = useDragControls();
+  const timer = useRef<number | null>(null);
+  const wasDragging = useRef(false);
+  const isPointerDown = useRef(false);
+  const isDraggingRef = useRef(false);
+  const [flipped, setFlipped] = useState(false);
+  const [dragReady, setDragReady] = useState(false);
+
+  function startHold(event: ReactPointerEvent<HTMLDivElement>) {
+    const pointerEvent = event.nativeEvent;
+    isPointerDown.current = true;
+    timer.current = window.setTimeout(() => {
+      if (!isPointerDown.current) return;
+      wasDragging.current = true;
+      setDragReady(true);
+      dragControls.start(pointerEvent);
+    }, 140);
+  }
+
+  function clearHold() {
+    isPointerDown.current = false;
+    if (timer.current) {
+      window.clearTimeout(timer.current);
+      timer.current = null;
+    }
+    if (!isDraggingRef.current) {
+      setDragReady(false);
+      onHoverChange(false);
+    }
+  }
+
+  function handleTap() {
+    if (wasDragging.current) {
+      wasDragging.current = false;
+      return;
+    }
+    if (!details) return;
+    setFlipped((value) => !value);
+  }
+
+  function handleDrag(_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) {
+    isDraggingRef.current = true;
+    setDragReady(false);
+    onHoverChange(pointInRect(info.point, getDropRect()));
+  }
+
+  function handleDragEnd(_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) {
+    const dropped = pointInRect(info.point, getDropRect());
+    isPointerDown.current = false;
+    isDraggingRef.current = false;
+    setDragReady(false);
+    onHoverChange(false);
+    if (dropped) onSelect(id);
+  }
+
+  function handleKeyDown(event: ReactKeyboardEvent<HTMLDivElement>) {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    event.preventDefault();
+    handleTap();
+  }
+
   return (
-    <div className="tutorial-step">
-      <div className="tutorial-icon">{icon}</div>
-      <h2>{title}</h2>
-      <p>{copy}</p>
-    </div>
+    <motion.div
+      className={`museum-option-card ${tone} ${flipped ? 'is-flipped' : ''} ${
+        dragReady ? 'is-drag-ready' : ''
+      }`}
+      drag
+      dragControls={dragControls}
+      dragListener={false}
+      dragMomentum={false}
+      dragSnapToOrigin
+      onClick={handleTap}
+      onPointerDown={startHold}
+      onPointerUp={clearHold}
+      onPointerCancel={clearHold}
+      onDrag={handleDrag}
+      onDragEnd={handleDragEnd}
+      onKeyDown={handleKeyDown}
+      role="button"
+      tabIndex={0}
+      whileDrag={{ scale: 1.04, zIndex: 40 }}
+    >
+      <span className="museum-option-inner">
+        <span className="museum-option-face museum-option-front">
+          {image && <img className="museum-option-image" src={image} alt="" aria-hidden="true" />}
+          <span className="museum-option-label">{label}</span>
+        </span>
+        {details && (
+          <span className="museum-option-face museum-option-back">
+            <span>{details}</span>
+            {link && (
+              <a
+                className="museum-option-link"
+                href="https://www.rmo.nl/"
+                target="_blank"
+                rel="noreferrer"
+                onClick={(event) => event.stopPropagation()}
+                onPointerDown={(event) => event.stopPropagation()}
+              >
+                <Globe size={14} />
+                {link}
+              </a>
+            )}
+          </span>
+        )}
+      </span>
+    </motion.div>
   );
 }
 
@@ -259,27 +1096,7 @@ function ChoiceButton({
     <button className={`choice-button ${selected ? 'is-selected' : ''}`} onClick={onClick} type="button">
       <span>{label}</span>
       {detail && <small>{detail}</small>}
+      {selected && <Check size={16} />}
     </button>
-  );
-}
-
-function ProgressDots({ step }: { step: StepId }) {
-  const visibleSteps: StepId[] = [
-    'tutorial-capture',
-    'tutorial-drag',
-    'museum',
-    'exhibition',
-    'motivation',
-    'aspect',
-    'format',
-  ];
-  const currentIndex = visibleSteps.indexOf(step);
-
-  return (
-    <div className="onboarding-progress" aria-label={`Onboarding step ${currentIndex + 1}`}>
-      {visibleSteps.map((item, index) => (
-        <span key={item} className={index <= currentIndex ? 'is-active' : ''} />
-      ))}
-    </div>
   );
 }

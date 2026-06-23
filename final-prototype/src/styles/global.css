@@ -263,10 +263,10 @@ img {
   min-height: 100%;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
   gap: 18px;
-  padding: 54px 22px 30px;
+  padding: 96px 48px 30px;
   color: #6d5a35;
+  background: #1a1b27;
 }
 
 .onboarding-panel {
@@ -280,26 +280,6 @@ img {
     0 18px 46px rgba(109, 90, 53, 0.11);
 }
 
-.tutorial-step {
-  min-height: 390px;
-  display: grid;
-  align-content: center;
-  justify-items: center;
-  gap: 18px;
-  text-align: center;
-}
-
-.tutorial-icon {
-  width: 82px;
-  height: 82px;
-  border: 2px solid rgba(111, 92, 52, 0.68);
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  color: #6f5c34;
-}
-
-.tutorial-step h2,
 .choice-step h2 {
   margin: 0;
   color: #695631;
@@ -308,7 +288,6 @@ img {
   line-height: 1.05;
 }
 
-.tutorial-step p,
 .choice-step > p {
   margin: 0;
   color: rgba(88, 72, 39, 0.82);
@@ -381,48 +360,607 @@ img {
   font-weight: 800;
 }
 
-.onboarding-footer {
+.museum-tutorial-page {
+  position: relative;
+  gap: 38px;
+  padding-top: 98px;
+}
+
+.museum-gap-card {
+  position: relative;
   width: min(100%, 342px);
+  min-height: 192px;
   margin: 0 auto;
-  display: grid;
-  gap: 16px;
+  border-radius: 17px;
+  padding: 34px 32px;
+  background:
+    radial-gradient(circle at 53% 42%, rgba(255, 248, 224, 0.96), rgba(235, 208, 139, 0.66)),
+    #f3df9f;
+  box-shadow: inset 0 0 0 1px rgba(109, 90, 53, 0.08);
+  overflow: hidden;
 }
 
-.onboarding-progress {
+.museum-gap-card.is-complete {
+  box-shadow:
+    0 0 34px rgba(214, 170, 74, 0.42),
+    0 0 78px rgba(214, 170, 74, 0.22),
+    inset 0 0 0 1px rgba(109, 90, 53, 0.08);
+}
+
+.museum-gap-card.is-wrong {
+  box-shadow:
+    0 0 34px rgba(202, 85, 61, 0.42),
+    0 0 82px rgba(202, 85, 61, 0.25),
+    inset 0 0 0 1px rgba(109, 90, 53, 0.08);
+}
+
+.museum-gap-card p {
+  margin: 0;
   display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+  color: #705d36;
+  font-family: "Caveat", cursive;
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.exhibition-gap-card {
+  min-height: 180px;
+}
+
+.exhibition-gap-card p {
+  gap: 8px 12px;
+  font-size: 23px;
+}
+
+.motivation-gap-card {
+  min-height: 170px;
+}
+
+.motivation-gap-card p {
+  gap: 8px 10px;
+  font-size: 22px;
+}
+
+.aspect-gap-card {
+  min-height: 178px;
+}
+
+.aspect-gap-card p {
+  gap: 8px 10px;
+  font-size: 22px;
+}
+
+.format-gap-card {
+  min-height: 174px;
+}
+
+.format-gap-card p {
+  gap: 8px 10px;
+  font-size: 22px;
+}
+
+.museum-gap-blank {
+  display: inline-flex;
+  min-width: 132px;
+  min-height: 30px;
+  align-items: center;
   justify-content: center;
-  gap: 7px;
+  border-bottom: 3px dashed rgba(183, 145, 57, 0.82);
+  color: rgba(183, 145, 57, 0.82);
+  font-size: 20px;
+  line-height: 1;
 }
 
-.onboarding-progress span {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: rgba(111, 92, 52, 0.24);
+.exhibition-blank {
+  min-width: 182px;
 }
 
-.onboarding-progress span.is-active {
-  background: #6f5c34;
+.motivation-blank {
+  min-width: 220px;
 }
 
-.onboarding-next {
-  width: 100%;
-  min-height: 54px;
-  border: 1px solid rgba(111, 92, 52, 0.38);
-  border-radius: 999px;
+.motivation-blank.one-more {
+  min-width: 148px;
+}
+
+.aspect-blank {
+  min-width: 262px;
+}
+
+.aspect-blank.one-more {
+  min-width: 118px;
+}
+
+.format-blank {
+  min-width: 220px;
+}
+
+.museum-exhibition-placeholder {
+  min-width: 154px;
+}
+
+.museum-gap-drop {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 9px;
-  background: #6f5c34;
-  color: #fff7de;
-  font-size: 15px;
-  font-weight: 800;
-  box-shadow: 0 14px 28px rgba(109, 90, 53, 0.2);
+  min-width: 132px;
+  min-height: 30px;
+  border-radius: 18px;
 }
 
-.onboarding-next:disabled {
-  opacity: 0.42;
+.museum-gap-drop::before {
+  content: "";
+  position: absolute;
+  inset: -22px -28px;
+  border-radius: inherit;
+}
+
+.exhibition-gap-drop {
+  min-width: 182px;
+}
+
+.motivation-gap-drop {
+  min-width: 220px;
+}
+
+.aspect-gap-drop {
+  min-width: 262px;
+}
+
+.format-gap-drop {
+  min-width: 220px;
+}
+
+.motivation-full-drop {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.motivation-full-drop.is-hovered {
+  background: rgba(202, 85, 61, 0.18);
+}
+
+.museum-gap-drop.is-hovered {
+  animation: ripple 0.9s infinite;
+  background: rgba(214, 170, 74, 0.08);
+}
+
+.museum-gap-blank.small {
+  min-width: 82px;
+}
+
+.museum-filled-answer {
+  border: 0;
+  border-radius: 999px;
+  padding: 6px 15px 7px;
+  background: rgba(244, 225, 174, 0.86);
+  color: #9c7a28;
+  font-family: "Caveat", cursive;
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.15;
+  text-align: center;
+  box-shadow: 0 0 22px rgba(247, 216, 128, 0.54);
+}
+
+.exhibition-filled-answer {
+  max-width: 100%;
+}
+
+.motivation-filled-answer {
+  max-width: 242px;
+}
+
+.aspect-filled-answer {
+  max-width: 228px;
+}
+
+.format-filled-answer {
+  max-width: 242px;
+}
+
+.motivation-answer-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.aspect-answer-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.static-answer {
+  display: inline-flex;
+  pointer-events: none;
+}
+
+.museum-wrong-fill {
+  position: absolute;
+  inset: 30px 0 auto;
+  height: 116px;
+  display: grid;
+  place-items: center;
+  padding: 0 26px;
+  border-radius: 15px;
+  background: rgba(210, 117, 88, 0.62);
+  color: #fff7ec;
+  font-size: 18px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.museum-unavailable-note,
+.museum-tutorial-note {
+  width: min(100%, 342px);
+  margin: 0 auto -20px;
+  color: #d6aa4a;
+  font-size: 16px;
+  line-height: 1.3;
+  text-align: center;
+}
+
+.museum-unavailable-note {
+  color: #d6613e;
+}
+
+.deselect-note {
+  margin-bottom: -28px;
+  text-align: right;
+  padding-right: 22px;
+}
+
+.deselect-note span {
+  display: inline-block;
+  margin-left: 7px;
+}
+
+.drag-note {
+  margin-top: -28px;
+}
+
+.museum-option-list {
+  display: grid;
+  gap: 30px;
+}
+
+.museum-option-card {
+  position: relative;
+  width: 100%;
+  min-height: 120px;
+  border: 0;
+  border-radius: 10px;
+  padding: 0;
+  color: #fff;
+  background: transparent;
+  touch-action: none;
+  transform-style: preserve-3d;
+  perspective: 900px;
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.16);
+}
+
+.museum-option-card.is-drag-ready {
+  outline: 2px solid rgba(214, 170, 74, 0.95);
+  outline-offset: 4px;
+}
+
+.museum-option-inner {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  transform-style: preserve-3d;
+  transition: transform 0.62s cubic-bezier(0.22, 0.72, 0.18, 1);
+}
+
+.museum-option-face {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  display: grid;
+  place-items: center;
+  padding: 18px 22px;
+  backface-visibility: hidden;
+  text-align: center;
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1.35;
+  transform-style: preserve-3d;
+}
+
+.museum-option-front {
+  overflow: hidden;
+  background: #797333;
+  isolation: isolate;
+}
+
+.museum-option-card.rust .museum-option-front {
+  background: #803d38;
+}
+
+.museum-option-card.blue .museum-option-front {
+  background: #335a75;
+}
+
+.museum-option-card.green .museum-option-front {
+  background: #2f5d42;
+}
+
+.museum-option-card.purple .museum-option-front {
+  background: #583a73;
+}
+
+.museum-option-card.pink .museum-option-front {
+  background: #793f67;
+}
+
+.museum-option-card.sky .museum-option-front {
+  background: #3f79a8;
+}
+
+.museum-option-card.orange .museum-option-front {
+  background: #8b5629;
+}
+
+.museum-option-back {
+  transform: rotateY(180deg);
+  gap: 12px;
+  background: #d1bd3e;
+  color: #fff;
+  font-size: 15px;
+  line-height: 1.25;
+}
+
+.museum-option-link {
+  min-width: 78%;
+  border-radius: 999px;
+  padding: 9px 18px;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  background: rgba(45, 45, 45, 0.72);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.exhibition-option-list {
+  gap: 14px;
+}
+
+.exhibition-option-list .museum-option-card {
+  min-height: 90px;
+}
+
+.exhibition-option-list .museum-option-card.is-flipped {
+  min-height: 122px;
+}
+
+.exhibition-option-list .museum-option-face {
+  font-size: 17px;
+}
+
+.exhibition-option-list .museum-option-back {
+  align-content: center;
+  gap: 8px;
+  padding: 10px 16px;
+  font-size: 14px;
+  line-height: 1.22;
+  overflow: hidden;
+}
+
+.exhibition-option-list .museum-option-back > span {
+  display: block;
+  max-width: 100%;
+}
+
+.motivation-option-list {
+  gap: 14px;
+}
+
+.motivation-option-list .museum-option-card {
+  min-height: 88px;
+}
+
+.motivation-option-list .museum-option-face {
+  font-size: 18px;
+}
+
+.motivation-option-list .museum-option-back {
+  padding: 12px 18px;
+  font-size: 16px;
+  line-height: 1.25;
+  background: #c9b927;
+}
+
+.aspect-option-list {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.aspect-option-list .museum-option-card {
+  min-height: 88px;
+}
+
+.aspect-option-list .museum-option-face {
+  padding: 12px;
+  font-size: 19px;
+  line-height: 1.2;
+}
+
+.aspect-option-list .museum-option-front {
+  position: relative;
+}
+
+.museum-option-image {
+  position: absolute;
+  z-index: 0;
+  inset: 5px;
+  width: calc(100% - 10px);
+  height: calc(100% - 10px);
+  object-fit: contain;
+  opacity: 0.68;
+  pointer-events: none;
+  filter: drop-shadow(0 5px 7px rgba(0, 0, 0, 0.24));
+}
+
+.museum-option-label {
+  position: relative;
+  z-index: 1;
+  display: block;
+  text-shadow: 0 2px 8px rgba(21, 15, 10, 0.28);
+}
+
+.aspect-option-list .museum-option-back {
+  padding: 12px;
+  font-size: 15px;
+  line-height: 1.26;
+  background: #c6aa2a;
+}
+
+.aspect-option-list .museum-option-card.is-flipped {
+  min-height: 96px;
+}
+
+.format-option-list {
+  gap: 14px;
+}
+
+.format-option-list .museum-option-card {
+  min-height: 90px;
+}
+
+.format-option-list .museum-option-face {
+  padding: 14px 18px;
+  font-size: 18px;
+  line-height: 1.25;
+}
+
+.format-option-list .museum-option-back {
+  padding: 12px 18px;
+  font-size: 15px;
+  line-height: 1.2;
+}
+
+.format-option-list .museum-option-card.rust .museum-option-back {
+  background: #c85a41;
+}
+
+.format-option-list .museum-option-card.blue .museum-option-back {
+  background: #4a89bf;
+}
+
+.format-option-list .museum-option-card.green .museum-option-back {
+  background: #4ca35a;
+}
+
+.print-choice-page {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 14px;
+  padding: 18px 0 118px;
+}
+
+.print-choice-button {
+  width: min(100%, 342px);
+  min-height: 90px;
+  margin: 0 auto;
+  border: 0;
+  border-radius: 999px;
+  padding: 0 24px;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1.25;
+  text-align: center;
+  box-shadow: none;
+}
+
+.print-choice-button.rust {
+  background: #803d38;
+}
+
+.print-choice-button.blue {
+  background: #335a75;
+}
+
+.print-choice-button.green {
+  background: #2f5d42;
+}
+
+.print-choice-button:active {
+  transform: scale(0.98);
+}
+
+.museum-option-card.is-flipped .museum-option-inner {
+  transform: rotateY(180deg);
+}
+
+.museum-complete-copy {
+  width: min(100%, 342px);
+  margin: -10px auto 0;
+  color: #d6aa4a;
+  text-align: center;
+  font-size: 16px;
+  line-height: 1.45;
+}
+
+.museum-complete-copy p {
+  margin: 0;
+}
+
+.museum-complete-copy span {
+  position: fixed;
+  right: 40px;
+  bottom: 164px;
+}
+
+.museum-complete-copy span::after {
+  content: "↓";
+  display: block;
+  margin-top: 6px;
+  font-family: "Caveat", cursive;
+  font-size: 28px;
+}
+
+.profiling-nav {
+  position: fixed;
+  left: 18px;
+  right: 18px;
+  bottom: 156px;
+  display: flex;
+  justify-content: space-between;
+  pointer-events: none;
+}
+
+.profiling-arrow {
+  width: 58px;
+  height: 58px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: rgba(25, 27, 38, 0.78);
+  color: #fff7de;
+  pointer-events: auto;
+}
+
+.profiling-arrow:disabled {
+  opacity: 0.26;
 }
 
 @keyframes start-ripple {

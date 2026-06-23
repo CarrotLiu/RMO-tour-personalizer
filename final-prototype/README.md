@@ -14,6 +14,16 @@ npm run dev
 The pottery challenge uses the real device camera through `navigator.mediaDevices.getUserMedia`.
 Camera access requires a secure browser context. It works on `localhost`; for testing on a physical phone, serve the app over HTTPS or use a trusted tunnel/domain. A plain `http://192.168.x.x` Vite URL may load the app but block camera permission.
 
+## Firebase data capture
+
+Create `final-prototype/.env.local` from `.env.example` and fill in the Firebase web app config values. When all values are present, the app writes:
+
+- `visitorSessions/{sessionId}`: username, profiling selections, timestamps.
+- `visitorSessions/{sessionId}/acceptedPhotos/{challengeId}`: metadata for each accepted artifact photo.
+- Firebase Storage `visitorSessions/{sessionId}/acceptedPhotos/`: the accepted JPEG photo files.
+
+If the Firebase env values are missing, the app still runs normally and skips remote writes.
+
 ## 已包含
 - Mobile app shell
 - Safe area / dynamic viewport

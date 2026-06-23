@@ -20,10 +20,12 @@ export function ChallengePage({
   challenge,
   completed,
   onComplete,
+  onAcceptedPhoto,
 }: {
   challenge: Challenge;
   completed: boolean;
   onComplete: () => void;
+  onAcceptedPhoto?: (photoDataUrl: string) => Promise<void>;
 }) {
   const dropTargetRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -139,6 +141,7 @@ export function ChallengePage({
       const checkingEnabled = await getPictureCheckingEnabled();
 
       if (!checkingEnabled) {
+        await handleAcceptedArtifactPhoto();
         advanceAfterRecognized();
         return;
       }
@@ -158,6 +161,7 @@ export function ChallengePage({
         return;
       }
 
+      await handleAcceptedArtifactPhoto();
       advanceAfterRecognized();
     } catch {
       setStatus('wrong');
@@ -181,6 +185,16 @@ export function ChallengePage({
       setStatus('done');
       onComplete();
     }, 700);
+  }
+
+  async function handleAcceptedArtifactPhoto() {
+    if (!photoSrc || !onAcceptedPhoto) return;
+
+    try {
+      await onAcceptedPhoto(photoSrc);
+    } catch (error) {
+      console.warn('Unable to save accepted artifact photo to Firebase.', error);
+    }
   }
 
   function handleCapturePhoto() {
