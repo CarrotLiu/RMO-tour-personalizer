@@ -94,10 +94,12 @@ const server = http.createServer(async (req, res) => {
 
   if (req.method === 'GET' && url.pathname === '/settings') {
     const session = url.searchParams.get('session') || 'field-journal';
+    const sessionSettings = settings.get(session);
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(
       JSON.stringify({
-        pictureCheckingEnabled: Boolean(settings.get(session)?.pictureCheckingEnabled),
+        pictureCheckingEnabled: Boolean(sessionSettings?.pictureCheckingEnabled),
+        updatedAt: sessionSettings?.updatedAt,
       }),
     );
     return;
@@ -108,6 +110,7 @@ const server = http.createServer(async (req, res) => {
     const session = body.session || 'field-journal';
     settings.set(session, {
       pictureCheckingEnabled: Boolean(body.pictureCheckingEnabled),
+      updatedAt: Number(body.updatedAt) || Date.now(),
     });
     broadcast(session, 'settings', settings.get(session));
     res.writeHead(204);

@@ -15,6 +15,13 @@ export type RecognitionRequest = {
 
 const CHANNEL_NAME = 'field-journal-recognition';
 const DEFAULT_SESSION = 'field-journal';
+const CHECKING_SETTING_TTL_MS = 30 * 60 * 1000;
+const SETTINGS_TIMEOUT_MS = 1200;
+
+type PictureCheckingSetting = {
+  pictureCheckingEnabled?: boolean;
+  updatedAt?: number;
+};
 
 function getSearchParams() {
   return new URLSearchParams(window.location.search);
@@ -43,33 +50,47 @@ export async function getPictureCheckingEnabled(): Promise<boolean> {
   const session = getJudgeSession();
 
   if (server) {
-    const response = await fetch(`${server}/settings?session=${encodeURIComponent(session)}`, {
-      cache: 'no-store',
-    });
-    const data = (await response.json()) as { pictureCheckingEnabled?: boolean };
-    return Boolean(data.pictureCheckingEnabled);
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), SETTINGS_TIMEOUT_MS);
+
+    try {
+      const response = await fetch(`${server}/settings?session=${encodeURIComponent(session)}`, {
+        cache: 'no-store',
+        signal: controller.signal,
+      });
+      const data = (await response.json()) as PictureCheckingSetting;
+      return isFreshEnabledSetting(data);
+    } catch {
+      return false;
+    } finally {
+      window.clearTimeout(timeout);
+    }
   }
 
-  return localStorage.getItem(`pictureCheckingEnabled:${session}`) === 'true';
+  return isFreshEnabledSetting(readLocalCheckingSetting(session));
 }
 
 export async function setPictureCheckingEnabled(enabled: boolean) {
   const server = getJudgeServer();
   const session = getJudgeSession();
+  const setting: PictureCheckingSetting = {
+    pictureCheckingEnabled: enabled,
+    updatedAt: Date.now(),
+  };
 
-  localStorage.setItem(`pictureCheckingEnabled:${session}`, String(enabled));
+  localStorage.setItem(`pictureCheckingEnabled:${session}`, JSON.stringify(setting));
 
   if (server) {
     await fetch(`${server}/settings`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ session, pictureCheckingEnabled: enabled }),
+      body: JSON.stringify({ session, ...setting }),
     });
     return;
   }
 
   const channel = createRecognitionChannel();
-  channel.postMessage({ type: 'settings', session, pictureCheckingEnabled: enabled });
+  channel.postMessage({ type: 'settings', session, ...setting });
   channel.close();
 }
 
@@ -173,4 +194,20 @@ export async function sendRecognitionDecision(
 
 function isDirectionHint(value: unknown): value is DirectionHint {
   return value === 'forward' || value === 'backward' || value === 'left' || value === 'right';
+}
+
+function isFreshEnabledSetting(setting: PictureCheckingSetting | null) {
+  if (!setting?.pictureCheckingEnabled || !setting.updatedAt) return false;
+  return Date.now() - setting.updatedAt < CHECKING_SETTING_TTL_MS;
+}
+
+function readLocalCheckingSetting(session: string): PictureCheckingSetting | null {
+  const raw = localStorage.getItem(`pictureCheckingEnabled:${session}`);
+  if (!raw) return null;
+
+  try {
+    return JSON.parse(raw) as PictureCheckingSetting;
+  } catch {
+    return null;
+  }
 }

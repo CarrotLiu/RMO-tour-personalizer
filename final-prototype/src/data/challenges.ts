@@ -41,6 +41,11 @@ export type Challenge = {
   location: { x: number; y: number };
 };
 
+export type ChallengeCompletionRecord = {
+  completedAt: string;
+  photoDataUrl?: string;
+};
+
 const assetUrl = (path: string) => `${import.meta.env.BASE_URL}${path}`;
 
 export const challenges: Challenge[] = [

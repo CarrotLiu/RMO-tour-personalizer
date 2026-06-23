@@ -103,6 +103,8 @@ const formats: {
   },
 ];
 
+const assetUrl = (path: string) => `${import.meta.env.BASE_URL}${path}`;
+
 const aspectOptions: {
   id: AspectOptionId;
   label: string;
@@ -116,7 +118,7 @@ const aspectOptions: {
     label: 'Trade & Exchange',
     answerLabel: 'trade & exchange',
     detail: 'economy, market, cross-cultural transaction',
-    image: '/assets/aspects/trade&exchange.png',
+    image: assetUrl('assets/aspects/trade&exchange.png'),
     tone: 'olive',
   },
   {
@@ -124,7 +126,7 @@ const aspectOptions: {
     label: 'Power & Authority',
     answerLabel: 'power & authority',
     detail: 'ruling, hierarchy, military, empire',
-    image: '/assets/aspects/power&authority.png',
+    image: assetUrl('assets/aspects/power&authority.png'),
     tone: 'rust',
   },
   {
@@ -132,7 +134,7 @@ const aspectOptions: {
     label: 'Rituals & Beliefs',
     answerLabel: 'rituals & beliefs',
     detail: 'burial, religion, animal/human remains',
-    image: '/assets/aspects/rituals&beliefs.png',
+    image: assetUrl('assets/aspects/rituals&beliefs.png'),
     tone: 'blue',
   },
   {
@@ -140,7 +142,7 @@ const aspectOptions: {
     label: 'Survival & Farming',
     answerLabel: 'survival & farming',
     detail: 'farming, hunting, agriculture, livestock',
-    image: '/assets/aspects/survival&farming.png',
+    image: assetUrl('assets/aspects/survival&farming.png'),
     tone: 'green',
   },
   {
@@ -148,7 +150,7 @@ const aspectOptions: {
     label: 'Fashion & Identity',
     answerLabel: 'fashion & identity',
     detail: 'jewelry, clothing, cosmetics',
-    image: '/assets/aspects/fashion&identity.png',
+    image: assetUrl('assets/aspects/fashion&identity.png'),
     tone: 'purple',
   },
   {
@@ -156,7 +158,7 @@ const aspectOptions: {
     label: 'Social & Daily Life',
     answerLabel: 'social & daily life',
     detail: 'furniture, leisure, domestic life, education',
-    image: '/assets/aspects/social&dailylife.png',
+    image: assetUrl('assets/aspects/social&dailylife.png'),
     tone: 'pink',
   },
   {
@@ -164,7 +166,7 @@ const aspectOptions: {
     label: 'Technology & Craftsmanship',
     answerLabel: 'technology & craftsmanship',
     detail: 'tools, materials, craftsmanship',
-    image: '/assets/aspects/technology&craftsmanship.png',
+    image: assetUrl('assets/aspects/technology&craftsmanship.png'),
     tone: 'sky',
   },
   {

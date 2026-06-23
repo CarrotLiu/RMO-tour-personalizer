@@ -2,7 +2,7 @@
 
 @font-face {
   font-family: "Ginto";
-  src: url("/assets/font/ABCGintoNormal-Regular-Trial-BF651b7b7846685.otf") format("opentype");
+  src: url("../../public/assets/font/ABCGintoNormal-Regular-Trial-BF651b7b7846685.otf") format("opentype");
   font-weight: 400;
   font-style: normal;
   font-display: swap;
@@ -10,7 +10,7 @@
 
 @font-face {
   font-family: "Ginto";
-  src: url("/assets/font/ABCGintoNormal-Medium-Trial-BF651b7b785c106.otf") format("opentype");
+  src: url("../../public/assets/font/ABCGintoNormal-Medium-Trial-BF651b7b785c106.otf") format("opentype");
   font-weight: 500;
   font-style: normal;
   font-display: swap;
@@ -18,7 +18,7 @@
 
 @font-face {
   font-family: "Ginto";
-  src: url("/assets/font/ABCGintoNormal-Bold-Trial-BF651b7b77d863b.otf") format("opentype");
+  src: url("../../public/assets/font/ABCGintoNormal-Bold-Trial-BF651b7b77d863b.otf") format("opentype");
   font-weight: 700 800;
   font-style: normal;
   font-display: swap;
@@ -38,7 +38,7 @@
   --moss: #3f674f;
   --clay: #a16044;
   --blue: #335a75;
-  --card-background: url("/assets/cardbackground.png");
+  --card-background: url("../../public/assets/cardbackground.png");
   color: var(--ink);
   font-family: "Ginto", Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
@@ -1088,9 +1088,52 @@ img {
 }
 
 .journal-card {
+  position: relative;
+  display: block;
+  border: 0;
+  perspective: 900px;
+  text-align: inherit;
+}
+
+.journal-card-button {
+  cursor: pointer;
+  transform-style: preserve-3d;
+}
+
+.journal-card-inner {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  transform-style: preserve-3d;
+  transition: transform 0.62s cubic-bezier(0.22, 0.72, 0.18, 1);
+}
+
+.journal-card.is-flipped .journal-card-inner {
+  transform: rotateY(180deg);
+}
+
+.journal-card-face {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 14px;
   display: grid;
+  backface-visibility: hidden;
+  transform-style: preserve-3d;
+}
+
+.journal-card-front {
   grid-template-rows: 1fr auto;
   align-items: center;
+  background: #f4ead1 var(--card-background) center / cover no-repeat;
+}
+
+.journal-card-back {
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: 8px;
+  transform: rotateY(180deg);
+  background: #f4ead1 var(--card-background) center / cover no-repeat;
+  color: #302919;
 }
 
 .journal-art,
@@ -1129,6 +1172,55 @@ img {
   font-size: 10px;
   margin: 0;
   opacity: 0.75;
+}
+
+.journal-completed-art {
+  width: 100%;
+  height: 92px;
+  align-self: center;
+  justify-self: center;
+  object-fit: contain;
+  border-radius: 6px;
+}
+
+.journal-proof {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.journal-proof-photo,
+.journal-proof-placeholder {
+  width: 44px;
+  height: 44px;
+  border-radius: 6px;
+}
+
+.journal-proof-photo {
+  object-fit: cover;
+  box-shadow: 0 0 0 1px rgba(82, 64, 32, 0.2);
+}
+
+.journal-proof-placeholder {
+  display: grid;
+  place-items: center;
+  padding: 4px;
+  background: rgba(48, 41, 25, 0.14);
+  color: rgba(48, 41, 25, 0.62);
+  font-size: 8px;
+  line-height: 1.05;
+  text-align: center;
+}
+
+.journal-proof-time {
+  min-width: 0;
+  color: rgba(48, 41, 25, 0.76);
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1.2;
+  text-align: left;
 }
 
 .locked-card,

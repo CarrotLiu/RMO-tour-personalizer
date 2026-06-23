@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronLeft, Lightbulb } from 'lucide-react';
-import { challenges, Challenge } from '../data/challenges';
+import { challenges, Challenge, ChallengeCompletionRecord } from '../data/challenges';
 import { HomePage } from '../pages/HomePage';
 import { MapPage } from '../pages/MapPage';
 import { CollectionPage } from '../pages/CollectionPage';
@@ -33,6 +33,7 @@ export default function App() {
   const [activeIndex, setActiveIndex] = useState(0);
   const [mapIndex, setMapIndex] = useState(0);
   const [completed, setCompleted] = useState<string[]>([]);
+  const [completionRecords, setCompletionRecords] = useState<Record<string, ChallengeCompletionRecord>>({});
 
   const activeChallenge = challenges[activeIndex];
   const isMapScreen = screen === 'map';
@@ -57,8 +58,12 @@ export default function App() {
     }
   }
 
-  function completeChallenge(id: string) {
+  function completeChallenge(id: string, record: ChallengeCompletionRecord) {
     setCompleted((previous) => (previous.includes(id) ? previous : [...previous, id]));
+    setCompletionRecords((previous) => ({
+      ...previous,
+      [id]: previous[id] ?? record,
+    }));
   }
 
   function registerVisitor(name: string) {
@@ -140,13 +145,17 @@ export default function App() {
               />
             )}
             {screen === 'collection' && (
-              <CollectionPage unlocked={unlocked} allChallenges={challenges} />
+              <CollectionPage
+                unlocked={unlocked}
+                allChallenges={challenges}
+                completionRecords={completionRecords}
+              />
             )}
             {screen === 'challenge' && (
               <ChallengePage
                 challenge={activeChallenge}
                 completed={completed.includes(activeChallenge.id)}
-                onComplete={() => completeChallenge(activeChallenge.id)}
+                onComplete={(record) => completeChallenge(activeChallenge.id, record)}
                 onAcceptedPhoto={(photoDataUrl) =>
                   saveAcceptedArtifactPhoto({
                     sessionId: visitorSessionId,

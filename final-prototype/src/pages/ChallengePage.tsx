@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Camera, Check, Sparkles, X } from 'lucide-react';
-import { Challenge } from '../data/challenges';
+import { Challenge, ChallengeCompletionRecord } from '../data/challenges';
 import { AssetImage } from '../components/AssetImage';
 import { BronzeAgeGapChallenge } from '../components/BronzeAgeGapChallenge';
 import { DraggableOption } from '../components/DraggableOption';
@@ -24,7 +24,7 @@ export function ChallengePage({
 }: {
   challenge: Challenge;
   completed: boolean;
-  onComplete: () => void;
+  onComplete: (record: ChallengeCompletionRecord) => void;
   onAcceptedPhoto?: (photoDataUrl: string) => Promise<void>;
 }) {
   const dropTargetRef = useRef<HTMLDivElement>(null);
@@ -43,6 +43,13 @@ export function ChallengePage({
   const unsolvedChallengeAsset = challenge.cardAssets?.unsolvedChallenge;
   const solvedChallengeAsset = challenge.cardAssets?.solvedChallenge;
   const hasFollowUpChallenge = Boolean(unsolvedChallengeAsset || challenge.options.length > 0);
+
+  function createCompletionRecord(): ChallengeCompletionRecord {
+    return {
+      completedAt: new Date().toISOString(),
+      photoDataUrl: photoSrc ?? undefined,
+    };
+  }
 
   function stopCamera() {
     streamRef.current?.getTracks().forEach((track) => track.stop());
@@ -125,7 +132,7 @@ export function ChallengePage({
     window.setTimeout(() => {
       setPhase('done');
       setStatus('done');
-      onComplete();
+      onComplete(createCompletionRecord());
     }, 650);
   }
 
@@ -141,7 +148,7 @@ export function ChallengePage({
       const checkingEnabled = await getPictureCheckingEnabled();
 
       if (!checkingEnabled) {
-        await handleAcceptedArtifactPhoto();
+        void handleAcceptedArtifactPhoto();
         advanceAfterRecognized();
         return;
       }
@@ -161,7 +168,7 @@ export function ChallengePage({
         return;
       }
 
-      await handleAcceptedArtifactPhoto();
+      void handleAcceptedArtifactPhoto();
       advanceAfterRecognized();
     } catch {
       setStatus('wrong');
@@ -183,7 +190,7 @@ export function ChallengePage({
 
       setPhase('done');
       setStatus('done');
-      onComplete();
+      onComplete(createCompletionRecord());
     }, 700);
   }
 
@@ -220,7 +227,7 @@ export function ChallengePage({
   function handleChallengeComplete() {
     setPhase('done');
     setStatus('done');
-    onComplete();
+    onComplete(createCompletionRecord());
   }
 
   if (phase === 'capture' || phase === 'review' || phase === 'recognizing') {
