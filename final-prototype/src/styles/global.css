@@ -646,9 +646,20 @@ img {
   color: #fff;
   background: transparent;
   touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
   transform-style: preserve-3d;
   perspective: 900px;
   box-shadow: 0 14px 28px rgba(0, 0, 0, 0.16);
+}
+
+.museum-option-card *,
+.drag-option *,
+.stone-gap-option * {
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
 }
 
 .museum-option-card.is-drag-ready {
@@ -1740,6 +1751,7 @@ img {
   touch-action: none;
   user-select: none;
   -webkit-user-select: none;
+  -webkit-touch-callout: none;
   font-size: 12px;
   font-weight: 800;
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.18);
@@ -1971,6 +1983,7 @@ img {
   touch-action: none;
   user-select: none;
   -webkit-user-select: none;
+  -webkit-touch-callout: none;
   overflow: hidden;
   font-size: 20px;
   font-weight: 800;

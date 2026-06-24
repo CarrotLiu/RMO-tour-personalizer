@@ -964,6 +964,7 @@ function MuseumOptionCard({
   const [dragReady, setDragReady] = useState(false);
 
   function startHold(event: ReactPointerEvent<HTMLDivElement>) {
+    event.preventDefault();
     const pointerEvent = event.nativeEvent;
     isPointerDown.current = true;
     timer.current = window.setTimeout(() => {

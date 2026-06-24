@@ -189,6 +189,7 @@ function BronzeGapOption({
 
   function startHold(event: ReactPointerEvent<HTMLButtonElement>) {
     if (disabled) return;
+    event.preventDefault();
     const pointerEvent = event.nativeEvent;
     pointerDown.current = true;
     timer.current = window.setTimeout(() => {

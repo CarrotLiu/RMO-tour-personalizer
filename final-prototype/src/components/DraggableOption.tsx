@@ -36,6 +36,7 @@ export function DraggableOption({
   const [isDragging, setIsDragging] = useState(false);
 
   function startHold(event: ReactPointerEvent<HTMLButtonElement>) {
+    event.preventDefault();
     const pointerEvent = event.nativeEvent;
     isPointerDown.current = true;
     timer.current = window.setTimeout(() => {
