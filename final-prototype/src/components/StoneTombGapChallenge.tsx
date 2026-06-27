@@ -83,7 +83,7 @@ export function StoneTombGapChallenge({
         const next = { ...current, [target.id]: option.id };
         if (Object.keys(next).length === targets.length) {
           setCompleted(true);
-          window.setTimeout(onComplete, 3000);
+          window.setTimeout(onComplete, 1500);
         }
         return next;
       });

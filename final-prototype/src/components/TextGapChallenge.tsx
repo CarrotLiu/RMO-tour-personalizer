@@ -36,7 +36,7 @@ export function TextGapChallenge({
 
     setAnswer(label);
     setStatus('correct');
-    window.setTimeout(onComplete, 3000);
+    window.setTimeout(onComplete, 1500);
   }
 
   return (

@@ -69,7 +69,7 @@ export function ChallengePage({
 
   function returnToMapAfterAnswer() {
     clearReturnTimer();
-    returnTimerRef.current = window.setTimeout(onSolved, 3000);
+    returnTimerRef.current = window.setTimeout(onSolved, 1500);
   }
 
   function completeAndReturnToMap() {
