@@ -50,6 +50,7 @@ export default function App() {
 
   const activeChallenge = challenges[activeIndex];
   const isMapScreen = screen === 'map';
+  const isChallengeScreen = screen === 'challenge';
   const unlocked = useMemo(
     () => challenges.filter((challenge) => completed.includes(challenge.id)),
     [completed],
@@ -105,13 +106,13 @@ export default function App() {
       <div
         className={`phone ${isMapScreen ? 'map-mode' : ''} ${
           screen === 'register' || screen === 'onboarding' ? 'register-mode' : ''
-        } ${screen === 'home' ? 'home-mode' : ''}`}
+        } ${screen === 'home' ? 'home-mode' : ''} ${isChallengeScreen ? 'challenge-mode' : ''}`}
       >
-        {!isMapScreen && screen !== 'home' && screen !== 'register' && screen !== 'onboarding' && (
+        {!isMapScreen && !isChallengeScreen && screen !== 'home' && screen !== 'register' && screen !== 'onboarding' && (
           <header className="top-bar">
             <button
               className="icon-button"
-              onClick={() => setScreen(screen === 'challenge' ? 'map' : 'home')}
+              onClick={() => setScreen('home')}
               type="button"
             >
               <ChevronLeft size={18} />
@@ -166,6 +167,8 @@ export default function App() {
                 challenge={activeChallenge}
                 completed={completed.includes(activeChallenge.id)}
                 onComplete={(record) => completeChallenge(activeChallenge.id, record)}
+                onBack={() => setScreen('map')}
+                onSolved={() => setScreen('map')}
                 onAcceptedPhoto={(photoDataUrl) =>
                   saveAcceptedArtifactPhoto({
                     sessionId: visitorSessionId,

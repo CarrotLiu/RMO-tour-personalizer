@@ -82,7 +82,7 @@ export function BronzeAgeGapChallenge({
         const next = { ...current, [target.id]: option.id };
         if (Object.keys(next).length === targets.length) {
           setCompleted(true);
-          window.setTimeout(onComplete, 850);
+          window.setTimeout(onComplete, 3000);
         }
         return next;
       });

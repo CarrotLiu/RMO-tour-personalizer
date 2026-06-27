@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Camera, Check, Sparkles, X } from 'lucide-react';
+import { Camera, Check, ChevronLeft, Lightbulb, Sparkles, X } from 'lucide-react';
 import { Challenge, ChallengeCompletionRecord } from '../data/challenges';
 import { AssetImage } from '../components/AssetImage';
 import { BronzeAgeGapChallenge } from '../components/BronzeAgeGapChallenge';
@@ -20,17 +20,22 @@ export function ChallengePage({
   challenge,
   completed,
   onComplete,
+  onBack,
+  onSolved,
   onAcceptedPhoto,
 }: {
   challenge: Challenge;
   completed: boolean;
   onComplete: (record: ChallengeCompletionRecord) => void;
+  onBack: () => void;
+  onSolved: () => void;
   onAcceptedPhoto?: (photoDataUrl: string) => Promise<void>;
 }) {
   const dropTargetRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const returnTimerRef = useRef<number | null>(null);
   const [phase, setPhase] = useState<ChallengePhase>(completed ? 'done' : 'capture');
   const [status, setStatus] = useState<FeedbackStatus>(completed ? 'done' : 'idle');
   const [isHoveringTarget, setIsHoveringTarget] = useState(false);
@@ -56,6 +61,40 @@ export function ChallengePage({
     streamRef.current = null;
   }
 
+  function clearReturnTimer() {
+    if (!returnTimerRef.current) return;
+    window.clearTimeout(returnTimerRef.current);
+    returnTimerRef.current = null;
+  }
+
+  function returnToMapAfterAnswer() {
+    clearReturnTimer();
+    returnTimerRef.current = window.setTimeout(onSolved, 3000);
+  }
+
+  function completeAndReturnToMap() {
+    onComplete(createCompletionRecord());
+    returnToMapAfterAnswer();
+  }
+
+  function completeChildChallengeAndReturn() {
+    onComplete(createCompletionRecord());
+    onSolved();
+  }
+
+  function renderBottomNav() {
+    return (
+      <nav className="challenge-bottom-nav map-bottom-nav" aria-label="Challenge controls">
+        <button className="map-nav-button" onClick={onBack} type="button" aria-label="Back to map">
+          <ChevronLeft size={22} />
+        </button>
+        <button className="map-nav-button" type="button" aria-label="Hint">
+          <Lightbulb size={20} />
+        </button>
+      </nav>
+    );
+  }
+
   useEffect(() => {
     setPhase(completed ? 'done' : 'capture');
     setStatus(completed ? 'done' : 'idle');
@@ -65,6 +104,12 @@ export function ChallengePage({
     setCameraError(null);
     setRecognitionHint(null);
   }, [challenge.id, completed]);
+
+  useEffect(() => {
+    return () => {
+      clearReturnTimer();
+    };
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -132,7 +177,7 @@ export function ChallengePage({
     window.setTimeout(() => {
       setPhase('done');
       setStatus('done');
-      onComplete(createCompletionRecord());
+      completeAndReturnToMap();
     }, 650);
   }
 
@@ -190,7 +235,7 @@ export function ChallengePage({
 
       setPhase('done');
       setStatus('done');
-      onComplete(createCompletionRecord());
+      completeAndReturnToMap();
     }, 700);
   }
 
@@ -225,71 +270,72 @@ export function ChallengePage({
   }
 
   function handleChallengeComplete() {
-    setPhase('done');
-    setStatus('done');
-    onComplete(createCompletionRecord());
+    completeChildChallengeAndReturn();
   }
 
   if (phase === 'capture' || phase === 'review' || phase === 'recognizing') {
     return (
       <div className="challenge-page capture-page">
-        <motion.div
-          className={`capture-card ${status}`}
-          animate={status === 'correct' ? { scale: [1, 1.045, 1] } : {}}
-          transition={{ duration: 0.42, ease: 'easeOut' }}
-        >
-          {hasPhoto && photoSrc ? (
-            <img className="camera-image" src={photoSrc} alt={`Captured ${challenge.title} photo`} />
-          ) : (
-            <div className="camera-view">
-              <video
-                ref={videoRef}
-                className="camera-video"
-                autoPlay
-                muted
-                playsInline
-                aria-label="Live camera preview"
-              />
-              <div className="camera-grid" aria-hidden="true" />
-              {cameraError && <p className="camera-error">{cameraError}</p>}
-            </div>
+        <div className="challenge-body capture-body">
+          <motion.div
+            className={`capture-card ${status}`}
+            animate={status === 'correct' ? { scale: [1, 1.045, 1] } : {}}
+            transition={{ duration: 0.42, ease: 'easeOut' }}
+          >
+            {hasPhoto && photoSrc ? (
+              <img className="camera-image" src={photoSrc} alt={`Captured ${challenge.title} photo`} />
+            ) : (
+              <div className="camera-view">
+                <video
+                  ref={videoRef}
+                  className="camera-video"
+                  autoPlay
+                  muted
+                  playsInline
+                  aria-label="Live camera preview"
+                />
+                <div className="camera-grid" aria-hidden="true" />
+                {cameraError && <p className="camera-error">{cameraError}</p>}
+              </div>
+            )}
+            <canvas ref={canvasRef} className="sr-only" aria-hidden="true" />
+          </motion.div>
+
+          {status === 'wrong' && (
+            <p className="capture-feedback wrong">
+              {recognitionHint ?? 'Wrong artifact, try another one!'}
+            </p>
           )}
-          <canvas ref={canvasRef} className="sr-only" aria-hidden="true" />
-        </motion.div>
 
-        {status === 'wrong' && (
-          <p className="capture-feedback wrong">
-            {recognitionHint ?? 'Wrong artifact, try another one!'}
-          </p>
-        )}
-
-        {phase === 'recognizing' && status !== 'wrong' ? (
-          <p className="capture-feedback">Checking artifact...</p>
-        ) : hasPhoto ? (
-          <div className="capture-actions">
-            <button className="capture-action submit" onClick={handleCaptureSubmit} type="button">
-              <span>Submit</span>
-              <Check size={54} strokeWidth={1.7} />
-            </button>
-            <button className="capture-action delete" onClick={handleDeletePhoto} type="button">
-              <span>Delete</span>
-              <X size={54} strokeWidth={1.7} />
-            </button>
-          </div>
-        ) : (
-          <>
-            <p className="capture-instruction">Capture the artifact for {challenge.title}.</p>
-            <button
-              className="shutter-button"
-              onClick={handleCapturePhoto}
-              type="button"
-              disabled={Boolean(cameraError)}
-            >
-              <Camera size={24} />
-              <span className="sr-only">Capture photo</span>
-            </button>
-          </>
-        )}
+          {phase === 'recognizing' && status !== 'wrong' ? (
+            <p className="capture-feedback">Checking artifact...</p>
+          ) : hasPhoto ? (
+            <div className="capture-actions">
+              <button className="capture-action submit" onClick={handleCaptureSubmit} type="button">
+                <span>Submit</span>
+                <Check size={54} strokeWidth={1.7} />
+              </button>
+              <button className="capture-action delete" onClick={handleDeletePhoto} type="button">
+                <span>Delete</span>
+                <X size={54} strokeWidth={1.7} />
+              </button>
+            </div>
+          ) : (
+            <>
+              <p className="capture-instruction">Capture the artifact for {challenge.title}.</p>
+              <button
+                className="shutter-button"
+                onClick={handleCapturePhoto}
+                type="button"
+                disabled={Boolean(cameraError)}
+              >
+                <Camera size={24} />
+                <span className="sr-only">Capture photo</span>
+              </button>
+            </>
+          )}
+        </div>
+        {renderBottomNav()}
       </div>
     );
   }
@@ -297,107 +343,134 @@ export function ChallengePage({
   if (phase === 'done') {
     return (
       <div className="challenge-page capture-page">
-        <motion.div className="capture-card done" animate={{ scale: [1, 1.045, 1] }}>
-          <AssetImage
-            asset={solvedChallengeAsset ?? challenge.capture?.journalNote ?? challenge.artifact}
-            className="journal-note-image"
-          />
-        </motion.div>
-        <p className="capture-note">{challenge.explanation}</p>
+        <div className="challenge-body capture-body">
+          <motion.div className="capture-card done" animate={{ scale: [1, 1.045, 1] }}>
+            <AssetImage
+              asset={solvedChallengeAsset ?? challenge.capture?.journalNote ?? challenge.artifact}
+              className="journal-note-image"
+            />
+          </motion.div>
+          <p className="capture-note">{challenge.explanation}</p>
+        </div>
+        {renderBottomNav()}
       </div>
     );
   }
 
   if (challenge.id === 'pin') {
-    return <BronzeAgeGapChallenge challenge={challenge} onComplete={handleChallengeComplete} />;
+    return (
+      <div className="challenge-page">
+        <div className="challenge-body">
+          <BronzeAgeGapChallenge challenge={challenge} onComplete={handleChallengeComplete} />
+        </div>
+        {renderBottomNav()}
+      </div>
+    );
   }
 
   if (challenge.id === 'skeleton') {
-    return <StoneTombGapChallenge challenge={challenge} onComplete={handleChallengeComplete} />;
+    return (
+      <div className="challenge-page">
+        <div className="challenge-body">
+          <StoneTombGapChallenge challenge={challenge} onComplete={handleChallengeComplete} />
+        </div>
+        {renderBottomNav()}
+      </div>
+    );
   }
 
   if (isTextChallenge && !unsolvedChallengeAsset) {
-    return <TextGapChallenge challenge={challenge} onComplete={handleChallengeComplete} />;
+    return (
+      <div className="challenge-page">
+        <div className="challenge-body">
+          <TextGapChallenge challenge={challenge} onComplete={handleChallengeComplete} />
+        </div>
+        {renderBottomNav()}
+      </div>
+    );
   }
 
   return (
     <div className="challenge-page">
-      <motion.div
-        className={`artifact-card ${status}`}
-        animate={status === 'wrong' ? { x: [0, -8, 8, -4, 4, 0] } : {}}
-      >
-        {isTextChallenge ? (
-          <p className="text-challenge-prompt">
-            {status === 'done' ? challenge.explanation : challenge.prompt}
-          </p>
-        ) : (
-          <div className="artifact-hero">
-            <AssetImage
-              asset={
-                status === 'done'
-                  ? solvedChallengeAsset ?? challenge.artifact
-                  : unsolvedChallengeAsset ?? challenge.artifact
-              }
-              className="artifact-symbol"
-            />
-            {status === 'done' && (
-              <span className="complete-badge">
-                <Check size={15} />
-                Saved
-              </span>
+      <div className="challenge-body">
+        <motion.div
+          className={`artifact-card ${status}`}
+          animate={status === 'wrong' ? { x: [0, -8, 8, -4, 4, 0] } : {}}
+        >
+          {isTextChallenge ? (
+            <p className="text-challenge-prompt">
+              {status === 'done' ? challenge.explanation : challenge.prompt}
+            </p>
+          ) : (
+            <div className="artifact-hero">
+              <AssetImage
+                asset={
+                  status === 'done'
+                    ? solvedChallengeAsset ?? challenge.artifact
+                    : unsolvedChallengeAsset ?? challenge.artifact
+                }
+                className="artifact-symbol"
+              />
+              {status === 'done' && (
+                <span className="complete-badge">
+                  <Check size={15} />
+                  Saved
+                </span>
+              )}
+            </div>
+          )}
+          {isTextChallenge && status === 'done' && (
+            <span className="complete-badge text-complete-badge">
+              <Check size={15} />
+              Saved
+            </span>
+          )}
+          <div
+            ref={dropTargetRef}
+            className={`drop-zone ${isHoveringTarget || status === 'correct' ? 'ripple' : ''}`}
+          >
+            {status === 'done' ? (
+              <>
+                <Sparkles size={16} />
+                Unlocked
+              </>
+            ) : (
+              challenge.targetLabel
             )}
           </div>
-        )}
-        {isTextChallenge && status === 'done' && (
-          <span className="complete-badge text-complete-badge">
-            <Check size={15} />
-            Saved
-          </span>
-        )}
-        <div
-          ref={dropTargetRef}
-          className={`drop-zone ${isHoveringTarget || status === 'correct' ? 'ripple' : ''}`}
-        >
-          {status === 'done' ? (
-            <>
-              <Sparkles size={16} />
-              Unlocked
-            </>
-          ) : (
-            challenge.targetLabel
-          )}
-        </div>
-      </motion.div>
+        </motion.div>
 
-      {status !== 'done' ? (
-        <>
-          {!isTextChallenge && <p className="challenge-prompt">{challenge.prompt}</p>}
-          <div className={`option-grid ${isImageChallenge ? 'image-options' : ''}`}>
-            {challenge.options.map((option) => (
-              <DraggableOption
-                key={option.id}
-                label={option.label}
-                asset={option.asset}
-                flipText={isImageChallenge ? option.explanation : undefined}
-                getDropRect={getDropRect}
-                onHoverChange={setIsHoveringTarget}
-                onDrop={handleDrop}
-              />
-            ))}
+        {status !== 'done' ? (
+          <>
+            {!isTextChallenge && <p className="challenge-prompt">{challenge.prompt}</p>}
+            <div className={`option-grid ${isImageChallenge ? 'image-options' : ''}`}>
+              {challenge.options.map((option) => (
+                <DraggableOption
+                  key={option.id}
+                  label={option.label}
+                  asset={option.asset}
+                  flipText={isImageChallenge ? option.explanation : undefined}
+                  getDropRect={getDropRect}
+                  onHoverChange={setIsHoveringTarget}
+                  onDrop={handleDrop}
+                />
+              ))}
+            </div>
+          </>
+        ) : (
+          <div className="completion-card">
+            <h2>Journal page unlocked</h2>
+            <p>{challenge.explanation}</p>
           </div>
-        </>
-      ) : (
-        <div className="completion-card">
-          <h2>Journal page unlocked</h2>
-          <p>{challenge.explanation}</p>
-        </div>
-      )}
+        )}
 
-      <p className="gesture-note">
-        {isImageChallenge
-          ? 'Tap an option to inspect it. Long press, then drag it into the dotted target.'
-          : 'Long press, then drag the phrase into the dotted target.'}
-      </p>
+        <p className="gesture-note">
+          {isImageChallenge
+            ? 'Tap an option to inspect it. Long press, then drag it into the dotted target.'
+            : 'Long press, then drag the phrase into the dotted target.'}
+        </p>
+      </div>
+      {renderBottomNav()}
     </div>
   );
 }
