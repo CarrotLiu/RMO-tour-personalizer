@@ -9,6 +9,7 @@ import { ChallengePage } from '../pages/ChallengePage';
 import { JudgePage } from '../pages/JudgePage';
 import { RegistrationPage } from '../pages/RegistrationPage';
 import { OnboardingPage, VisitorProfile } from '../pages/OnboardingPage';
+import { bindStableAppHeight, setStableAppHeight } from './viewportHeight';
 import {
   saveAcceptedArtifactPhoto,
   saveVisitorProfile,
@@ -19,6 +20,18 @@ type Screen = 'register' | 'onboarding' | 'home' | 'map' | 'collection' | 'chall
 
 function createSessionId() {
   return crypto.randomUUID?.() ?? `visitor-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
+function resetAfterKeyboard() {
+  if (document.activeElement instanceof HTMLElement) {
+    document.activeElement.blur();
+  }
+
+  window.scrollTo({ top: 0, left: 0 });
+  setStableAppHeight();
+  window.setTimeout(setStableAppHeight, 80);
+  window.setTimeout(setStableAppHeight, 260);
+  window.setTimeout(setStableAppHeight, 520);
 }
 
 export default function App() {
@@ -50,6 +63,10 @@ export default function App() {
     setMapIndex((index) => Math.min(index, Math.max(0, mapChallenges.length - 1)));
   }, [mapChallenges.length]);
 
+  useEffect(() => {
+    return bindStableAppHeight();
+  }, []);
+
   function openChallenge(challenge: Challenge) {
     const challengeIndex = challenges.findIndex((item) => item.id === challenge.id);
     if (challengeIndex >= 0) {
@@ -67,6 +84,7 @@ export default function App() {
   }
 
   function registerVisitor(name: string) {
+    resetAfterKeyboard();
     setVisitorName(name);
     void saveVisitorRegistration({ sessionId: visitorSessionId, username: name }).catch((error) => {
       console.warn('Unable to save visitor registration to Firebase.', error);
@@ -87,31 +105,23 @@ export default function App() {
       <div
         className={`phone ${isMapScreen ? 'map-mode' : ''} ${
           screen === 'register' || screen === 'onboarding' ? 'register-mode' : ''
-        }`}
+        } ${screen === 'home' ? 'home-mode' : ''}`}
       >
-        {!isMapScreen && screen !== 'register' && screen !== 'onboarding' && (
-          <header className={`top-bar ${screen === 'home' ? 'home-top-bar' : ''}`}>
-            {screen !== 'home' ? (
-              <button
-                className="icon-button"
-                onClick={() => setScreen(screen === 'challenge' ? 'map' : 'home')}
-                type="button"
-              >
-                <ChevronLeft size={18} />
-              </button>
-            ) : (
-              <span aria-hidden="true" />
-            )}
+        {!isMapScreen && screen !== 'home' && screen !== 'register' && screen !== 'onboarding' && (
+          <header className="top-bar">
+            <button
+              className="icon-button"
+              onClick={() => setScreen(screen === 'challenge' ? 'map' : 'home')}
+              type="button"
+            >
+              <ChevronLeft size={18} />
+            </button>
             <div>
               <h1>My Field Journal</h1>
             </div>
-            {screen !== 'home' ? (
-              <button className="icon-button" type="button">
-                <Lightbulb size={18} />
-              </button>
-            ) : (
-              <span aria-hidden="true" />
-            )}
+            <button className="icon-button" type="button">
+              <Lightbulb size={18} />
+            </button>
           </header>
         )}
 

@@ -4,6 +4,10 @@ import { Camera, Check, Sparkles, X } from 'lucide-react';
 import { Challenge } from '../data/challenges';
 import { AssetImage } from '../components/AssetImage';
 import { DraggableOption } from '../components/DraggableOption';
+import { requestRecognitionDecision } from '../app/recognitionRelay';
+
+type ChallengePhase = 'capture' | 'review' | 'recognizing' | 'challenge' | 'done';
+type FeedbackStatus = 'idle' | 'correct' | 'wrong' | 'done';
 
 export function ChallengePage({
   challenge,
@@ -18,9 +22,8 @@ export function ChallengePage({
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
-  const [status, setStatus] = useState<'idle' | 'correct' | 'wrong' | 'done'>(
-    completed ? 'done' : 'idle',
-  );
+  const [phase, setPhase] = useState<ChallengePhase>(completed ? 'done' : 'capture');
+  const [status, setStatus] = useState<FeedbackStatus>(completed ? 'done' : 'idle');
   const [isHoveringTarget, setIsHoveringTarget] = useState(false);
   const [hasPhoto, setHasPhoto] = useState(false);
   const [photoSrc, setPhotoSrc] = useState<string | null>(null);
@@ -29,6 +32,7 @@ export function ChallengePage({
   const isImageChallenge = challenge.kind !== 'text' && challenge.kind !== 'capture';
   const unsolvedChallengeAsset = challenge.cardAssets?.unsolvedChallenge;
   const solvedChallengeAsset = challenge.cardAssets?.solvedChallenge;
+  const hasFollowUpChallenge = Boolean(unsolvedChallengeAsset || challenge.options.length > 0);
 
   function stopCamera() {
     streamRef.current?.getTracks().forEach((track) => track.stop());
@@ -36,6 +40,7 @@ export function ChallengePage({
   }
 
   useEffect(() => {
+    setPhase(completed ? 'done' : 'capture');
     setStatus(completed ? 'done' : 'idle');
     setIsHoveringTarget(false);
     setHasPhoto(false);
@@ -47,7 +52,7 @@ export function ChallengePage({
     let isMounted = true;
 
     async function startCamera() {
-      if (challenge.kind !== 'capture' || completed || status === 'done' || hasPhoto) {
+      if (completed || phase !== 'capture' || hasPhoto) {
         stopCamera();
         return;
       }
@@ -91,7 +96,7 @@ export function ChallengePage({
       isMounted = false;
       stopCamera();
     };
-  }, [challenge.kind, completed, hasPhoto, status]);
+  }, [completed, hasPhoto, phase]);
 
   function getDropRect() {
     return dropTargetRef.current?.getBoundingClientRect() ?? null;
@@ -107,18 +112,52 @@ export function ChallengePage({
 
     setStatus('correct');
     window.setTimeout(() => {
+      setPhase('done');
       setStatus('done');
       onComplete();
     }, 650);
   }
 
-  function handleCaptureSubmit() {
+  async function handleCaptureSubmit() {
+    if (!hasPhoto) return;
+
     stopCamera();
-    setStatus('correct');
-    window.setTimeout(() => {
-      setStatus('done');
-      onComplete();
-    }, 650);
+    setPhase('recognizing');
+    setStatus('idle');
+
+    try {
+      const decision = await requestRecognitionDecision(challenge.id, challenge.title);
+
+      if (decision === 'wrong') {
+        setStatus('wrong');
+        window.setTimeout(() => {
+          setPhotoSrc(null);
+          setHasPhoto(false);
+          setStatus('idle');
+          setPhase('capture');
+        }, 3000);
+        return;
+      }
+
+      setStatus('correct');
+      window.setTimeout(() => {
+        if (hasFollowUpChallenge) {
+          setPhase('challenge');
+          setStatus('idle');
+          return;
+        }
+
+        setPhase('done');
+        setStatus('done');
+        onComplete();
+      }, 700);
+    } catch {
+      setStatus('wrong');
+      window.setTimeout(() => {
+        setStatus('idle');
+        setPhase('review');
+      }, 3000);
+    }
   }
 
   function handleCapturePhoto() {
@@ -131,25 +170,26 @@ export function ChallengePage({
     canvas.getContext('2d')?.drawImage(video, 0, 0, canvas.width, canvas.height);
     setPhotoSrc(canvas.toDataURL('image/jpeg', 0.92));
     setHasPhoto(true);
+    setPhase('review');
     stopCamera();
   }
 
   function handleDeletePhoto() {
     setPhotoSrc(null);
     setHasPhoto(false);
+    setPhase('capture');
   }
 
-  if (challenge.kind === 'capture' && challenge.capture) {
+  if (phase === 'capture' || phase === 'review' || phase === 'recognizing') {
     return (
       <div className="challenge-page capture-page">
-        <motion.div className={`capture-card ${status}`}>
-          {status === 'done' ? (
-            <AssetImage
-              asset={solvedChallengeAsset ?? challenge.capture.journalNote}
-              className="journal-note-image"
-            />
-          ) : hasPhoto && photoSrc ? (
-            <img className="camera-image" src={photoSrc} alt="Captured pottery artifact preview" />
+        <motion.div
+          className={`capture-card ${status}`}
+          animate={status === 'correct' ? { scale: [1, 1.045, 1] } : {}}
+          transition={{ duration: 0.42, ease: 'easeOut' }}
+        >
+          {hasPhoto && photoSrc ? (
+            <img className="camera-image" src={photoSrc} alt={`Captured ${challenge.title} photo`} />
           ) : (
             <div className="camera-view">
               <video
@@ -167,8 +207,12 @@ export function ChallengePage({
           <canvas ref={canvasRef} className="sr-only" aria-hidden="true" />
         </motion.div>
 
-        {status === 'done' ? (
-          <p className="capture-note">{challenge.explanation}</p>
+        {status === 'wrong' && (
+          <p className="capture-feedback wrong">Wrong artifact, try another one!</p>
+        )}
+
+        {phase === 'recognizing' && status !== 'wrong' ? (
+          <p className="capture-feedback">Checking artifact...</p>
         ) : hasPhoto ? (
           <div className="capture-actions">
             <button className="capture-action submit" onClick={handleCaptureSubmit} type="button">
@@ -182,7 +226,7 @@ export function ChallengePage({
           </div>
         ) : (
           <>
-            <p className="capture-instruction">{challenge.prompt}</p>
+            <p className="capture-instruction">Capture the artifact for {challenge.title}.</p>
             <button
               className="shutter-button"
               onClick={handleCapturePhoto}
@@ -194,6 +238,20 @@ export function ChallengePage({
             </button>
           </>
         )}
+      </div>
+    );
+  }
+
+  if (phase === 'done') {
+    return (
+      <div className="challenge-page capture-page">
+        <motion.div className="capture-card done" animate={{ scale: [1, 1.045, 1] }}>
+          <AssetImage
+            asset={solvedChallengeAsset ?? challenge.capture?.journalNote ?? challenge.artifact}
+            className="journal-note-image"
+          />
+        </motion.div>
+        <p className="capture-note">{challenge.explanation}</p>
       </div>
     );
   }

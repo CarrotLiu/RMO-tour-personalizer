@@ -6,10 +6,15 @@ import { HomePage } from '../pages/HomePage';
 import { MapPage } from '../pages/MapPage';
 import { CollectionPage } from '../pages/CollectionPage';
 import { ChallengePage } from '../pages/ChallengePage';
+import { JudgePage } from '../pages/JudgePage';
 
 type Screen = 'home' | 'map' | 'collection' | 'challenge';
 
 export default function App() {
+  if (new URLSearchParams(window.location.search).has('judge')) {
+    return <JudgePage />;
+  }
+
   const [screen, setScreen] = useState<Screen>('home');
   const [activeIndex, setActiveIndex] = useState(0);
   const [mapIndex, setMapIndex] = useState(0);

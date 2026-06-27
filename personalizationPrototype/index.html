@@ -498,7 +498,7 @@ function advanceAfterInteraction() {
 const INTRO_TEXTS = {
   'sentence-builder': 'Please complete the sentence by selecting phrases that you feel most relate to how you want to plan your trip in RMO. We will personalize your trip according to your selection. You can select multiple phrases at the same time. Press "Continue" for the next step, press "Back" to revise your answer.',
   'word-cloud': 'Please select the phrases regarding the museum trip in RMO that interest you most. We will personalize your trip according to your selection. You can select multiple phrases at the same time. Press "Continue" for the next step, press "Back" to revise your answer.',
-  'questionnaire': 'Please fill out this survey regarding the museum trip in RMO. You can select multiple options at the same time. We will personalize your trip according to your selection. Press "Continue" for the next step, press "Back" to revise your answer.'
+  'questionnaire': 'Please complete the sentence by selecting phrases that you feel most relate to how you want to plan your trip in RMO. We will personalize your trip according to your selection. You can select multiple phrases at the same time. Press "Continue" for the next step, press "Back" to revise your answer.'
 };
 
 function renderInteractionIntro(app, extra) {
@@ -650,10 +650,11 @@ function escapeHTML(str) {
   return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
-function renderBlankChips(selStr, blankIdx) {
+function renderBlankChips(selStr, blankIdx, removeFnPrefix) {
   if (!selStr) return '';
+  const fnName = (removeFnPrefix || '') + 'removeFromBlank';
   const words = selStr.split(' and ');
-  return words.map(w => `<span class="chip" data-blank="${blankIdx}" data-word="${escapeHTML(w)}" onclick="removeFromBlank(${blankIdx}, '${escapeHTML(w).replace(/'/g, "&#39;")}', event)">${escapeHTML(w)}</span>`).join('');
+  return words.map(w => `<span class="chip" data-blank="${blankIdx}" data-word="${escapeHTML(w)}" onclick="${fnName}(${blankIdx}, '${escapeHTML(w).replace(/'/g, "&#39;")}', event)">${escapeHTML(w)}</span>`).join('');
 }
 
 function animateChipFly(startEl, targetRect, fromBlank, onComplete) {
@@ -896,102 +897,234 @@ function finishWordCloud() {
 }
 
 // ===================================================================
-// 6. TRADITIONAL QUESTIONNAIRE
+// 6. TRADITIONAL QUESTIONNAIRE (as Sentence Builder)
 // ===================================================================
-const QUESTIONNAIRE_QUESTIONS = [
+const QNA_SENTENCE_STEPS = [
   {
-    text: 'How do you prefer to visit?',
-    options: ['freely explore stuffs', 'unexpectedly encounter surprises', 'quickly find highlights', 'seriously learn knowledge', 'intentionally practice a skill', 'peacefully relax']
+    fixedBefore: 'I prefer to ',
+    hint: 'choose how you prefer to visit',
+    fixedAfter: ',',
+    words: [
+      'freely explore stuffs',
+      'unexpectedly encounter surprises',
+      'quickly find highlights',
+      'seriously learn knowledge',
+      'intentionally practice a skill',
+      'peacefully relax'
+    ],
+    multipleChoice: true,
+    id: 'visitStyle'
   },
   {
-    text: 'How do you prefer to absorb information?',
-    options: ['Observe the patterns and details', 'Read an interesting story', 'read something like Wikipedia']
+    fixedBefore: 'especially regarding ',
+    hint: 'choose aspects you care about',
+    fixedAfter: ',',
+    words: [
+      'economy', 'politics', 'funeral', 'farming',
+      'food culture', 'fashion', 'arts', 'no preference'
+    ],
+    multipleChoice: true,
+    id: 'aspects'
   },
   {
-    text: 'Which aspect(s) do you care most about?',
-    options: ['economy', 'politics', 'funeral', 'farming', 'food culture', 'fashion', 'arts', 'no preference']
+    fixedBefore: 'by ',
+    hint: 'choose how to absorb information',
+    fixedAfter: '.',
+    words: [
+      'Observe the patterns and details',
+      'Read an interesting story',
+      'read something like Wikipedia'
+    ],
+    multipleChoice: true,
+    id: 'absorbStyle'
   }
 ];
 
-let qnaStepIndex = 0;
-let qnaSelections = [[], [], []];
+let qnaSbStepIndex = 0;
+let qnaSbSelections = [[], [], []];
 
-function initQuestionnaire() {
-  qnaStepIndex = 0;
-  qnaSelections = [[], [], []];
+function initQnaSentenceBuilder() {
+  qnaSbStepIndex = 0;
+  qnaSbSelections = [[], [], []];
 }
 
 function renderQuestionnaire(app, extra) {
+  const ix = extra ? extra.ix : currentIx;
   if (navStack.length <= 1 || navStack[navStack.length - 1].state !== STATE.QUESTIONNAIRE) {
-    initQuestionnaire();
+    initQnaSentenceBuilder();
   }
 
-  const q = QUESTIONNAIRE_QUESTIONS[qnaStepIndex];
-  const sel = qnaSelections[qnaStepIndex];
+  const step = QNA_SENTENCE_STEPS[qnaSbStepIndex];
+  const selected = qnaSbSelections[qnaSbStepIndex] || [];
+  const hasSelection = selected.length > 0;
+
+  const aspectsHasNoPref = qnaSbSelections[1] && qnaSbSelections[1].includes('no preference');
+
+  let sel0 = (qnaSbSelections[0] || []).join(' and ');
+  let sel1 = (qnaSbSelections[1] || []).join(' and ');
+  let sel2 = (qnaSbSelections[2] || []).join(' and ');
+  if (sel0 === '') sel0 = null;
+  if (sel1 === '') sel1 = null;
+  if (sel2 === '') sel2 = null;
+
+  let displayHTML = '';
+
+  // Step 0: I prefer to [blank],
+  displayHTML += '<span class="fixed">I prefer to </span>';
+  if (sel0) {
+    displayHTML += `<span class="blank filled" data-blank="0">${renderBlankChips(sel0, 0, 'qna')}</span>`;
+  } else {
+    displayHTML += `<span class="blank" data-blank="0" id="qnaDropZone0"><span class="hint">${QNA_SENTENCE_STEPS[0].hint}</span></span>`;
+  }
+  displayHTML += '<span class="fixed">,</span>';
+
+  // Step 1: especially regarding [blank], (only show if step >= 1 and not no-pref)
+  if (qnaSbStepIndex >= 1 && !aspectsHasNoPref) {
+    displayHTML += '<span class="fixed"> especially regarding </span>';
+    if (sel1) {
+      displayHTML += `<span class="blank filled" data-blank="1">${renderBlankChips(sel1, 1, 'qna')}</span>`;
+    } else {
+      displayHTML += `<span class="blank" data-blank="1" id="qnaDropZone1"><span class="hint">${QNA_SENTENCE_STEPS[1].hint}</span></span>`;
+    }
+    displayHTML += '<span class="fixed">,</span>';
+  }
+
+  // Step 2: by [blank]. (only show if step >= 2, or step 1 done with no-pref)
+  if (qnaSbStepIndex >= 2 || (qnaSbStepIndex >= 1 && aspectsHasNoPref)) {
+    displayHTML += '<span class="fixed"> by </span>';
+    if (sel2) {
+      displayHTML += `<span class="blank filled" data-blank="2">${renderBlankChips(sel2, 2, 'qna')}</span>`;
+    } else {
+      displayHTML += `<span class="blank" data-blank="2" id="qnaDropZone2"><span class="hint">${QNA_SENTENCE_STEPS[2].hint}</span></span>`;
+    }
+    displayHTML += '<span class="fixed">.</span>';
+  }
+
+  const usedWords = new Set(selected);
+  const isLastStep = qnaSbStepIndex >= 2;
+  const buttonLabel = isLastStep ? 'Finish' : 'Continue';
 
   app.innerHTML = `
     <div class="card">
-      ${renderProgress(extra.ix + 1, 3, 'Interaction')}
-      <h2>Questionnaire</h2>
-      <div class="step-indicator">Question ${qnaStepIndex + 1} of ${QUESTIONNAIRE_QUESTIONS.length}</div>
-      <p style="margin-bottom:14px;"><strong>${q.text}</strong></p>
-      ${q.options.map(o => {
-        const isSel = sel.includes(o);
-        return `<button class="q-option${isSel ? ' selected' : ''}" data-val="${escapeHTML(o)}" onclick="toggleQnaOption('${escapeHTML(o).replace(/'/g, "&#39;")}', this)">${escapeHTML(o)}</button>`;
-      }).join('')}
+      ${renderProgress(ix + 1, 3, 'Interaction')}
+      <h2>Sentence Builder</h2>
+      <div class="step-indicator">Step ${Math.min(qnaSbStepIndex + 1, aspectsHasNoPref ? 2 : 3)} of ${aspectsHasNoPref ? 2 : 3}</div>
+      <div class="sentence-display">${displayHTML}</div>
+      <p class="subtle" style="margin-bottom:8px;">Tap words to fill the blank above:</p>
+      <div class="word-pool" id="qnaWordPool">
+        ${step.words.map(w => {
+          const isUsed = usedWords.has(w);
+          return `<span class="word-chip${isUsed ? ' used' : ''}" data-word="${escapeHTML(w)}" onclick="qnaFillWord('${escapeHTML(w).replace(/'/g, "&#39;")}', event)">${escapeHTML(w)}</span>`;
+        }).join('')}
+      </div>
       <div class="btn-row between">
         <button class="btn btn-secondary" onclick="qnaGoBack()">Back</button>
-        <button class="btn btn-primary" ${sel.length > 0 ? '' : 'disabled'} onclick="qnaContinue()">
-          ${qnaStepIndex >= QUESTIONNAIRE_QUESTIONS.length - 1 ? 'Finish' : 'Continue'}
-        </button>
+        <button class="btn btn-primary" id="qnaContinue" ${hasSelection ? '' : 'disabled'} onclick="qnaContinue()">${buttonLabel}</button>
       </div>
     </div>`;
 }
 
-function toggleQnaOption(val, el) {
-  const sel = qnaSelections[qnaStepIndex];
-  if (val === 'no preference' && !sel.includes('no preference')) {
-    qnaSelections[qnaStepIndex] = ['no preference'];
-  } else if (val === 'no preference' && sel.includes('no preference')) {
-    qnaSelections[qnaStepIndex] = [];
+function qnaFillWord(word, event) {
+  const idx = qnaSbStepIndex;
+  const step = QNA_SENTENCE_STEPS[idx];
+  const selected = qnaSbSelections[idx] || [];
+  if (selected.includes(word)) return;
+
+  const startEl = event ? event.target : document.querySelector(`.word-chip[data-word="${escapeHTML(word)}"]`);
+  const targetEl = document.querySelector('.blank[data-blank="' + idx + '"]');
+  if (!startEl || !targetEl) {
+    qnaApplyFill(word, idx, step, selected);
+    return;
+  }
+  const targetRect = targetEl.getBoundingClientRect();
+  animateChipFly(startEl, targetRect, false, () => {
+    qnaApplyFill(word, idx, step, selected);
+  });
+}
+
+function qnaApplyFill(word, idx, step, selected) {
+  if (!step.multipleChoice) {
+    qnaSbSelections[idx] = [word];
   } else {
-    qnaSelections[qnaStepIndex] = sel.filter(v => v !== 'no preference');
-    const idx = qnaSelections[qnaStepIndex].indexOf(val);
-    if (idx >= 0) qnaSelections[qnaStepIndex].splice(idx, 1);
-    else qnaSelections[qnaStepIndex].push(val);
+    if (word === 'no preference') {
+      qnaSbSelections[idx] = ['no preference'];
+    } else {
+      qnaSbSelections[idx] = selected.filter(w => w !== 'no preference');
+      qnaSbSelections[idx].push(word);
+    }
   }
   renderQuestionnaire(document.getElementById('app'), { ix: currentIx });
 }
 
+function qnaRemoveFromBlank(blankIdx, word, event) {
+  const idx = parseInt(blankIdx);
+  const startEl = event ? event.target : document.querySelector(`.chip[data-word="${escapeHTML(word)}"]`);
+  const poolEl = document.getElementById('qnaWordPool');
+  if (!startEl || !poolEl) {
+    qnaSbSelections[idx] = qnaSbSelections[idx].filter(w => w !== word);
+    renderQuestionnaire(document.getElementById('app'), { ix: currentIx });
+    return;
+  }
+  const targetRect = poolEl.getBoundingClientRect();
+  animateChipFly(startEl, targetRect, true, () => {
+    qnaSbSelections[idx] = qnaSbSelections[idx].filter(w => w !== word);
+    renderQuestionnaire(document.getElementById('app'), { ix: currentIx });
+  });
+}
+
 function qnaGoBack() {
-  if (qnaStepIndex > 0) {
-    qnaStepIndex--;
+  if (qnaSbStepIndex > 0) {
+    qnaSbSelections[qnaSbStepIndex] = [];
+    qnaSbStepIndex--;
     renderQuestionnaire(document.getElementById('app'), { ix: currentIx });
   } else {
     const interaction = INTERACTIONS[interactionOrder[currentIx]];
     navStack.pop();
-    initQuestionnaire();
+    initQnaSentenceBuilder();
     navigateTo(STATE.INTERACTION_INTRO, { interaction, ix: currentIx });
   }
 }
 
 function qnaContinue() {
-  if (qnaSelections[qnaStepIndex].length === 0) return;
-  if (qnaStepIndex < QUESTIONNAIRE_QUESTIONS.length - 1) {
-    qnaStepIndex++;
-    renderQuestionnaire(document.getElementById('app'), { ix: currentIx });
-  } else {
+  const selected = qnaSbSelections[qnaSbStepIndex];
+  if (selected.length === 0) return;
+
+  const aspectsHasNoPref = qnaSbSelections[1] && qnaSbSelections[1].includes('no preference');
+
+  if (qnaSbStepIndex === 1 && aspectsHasNoPref) {
+    qnaSbStepIndex = 2;
+  } else if (qnaSbStepIndex < 2) {
+    qnaSbStepIndex++;
+  }
+
+  const done = qnaSbStepIndex >= 2 || (qnaSbStepIndex === 1 && aspectsHasNoPref);
+
+  if (done && qnaSbStepIndex <= 2) {
+    if (qnaSbSelections[qnaSbStepIndex] && qnaSbSelections[qnaSbStepIndex].length === 0 && qnaSbStepIndex <= 2) {
+      renderQuestionnaire(document.getElementById('app'), { ix: currentIx });
+      return;
+    }
+  }
+
+  if (qnaSbStepIndex >= 2 && qnaSbSelections[2].length > 0) {
     finishQuestionnaire();
+  } else if (qnaSbStepIndex >= 2 && qnaSbSelections[1] && qnaSbSelections[1].includes('no preference') && qnaSbSelections[2].length === 0) {
+    renderQuestionnaire(document.getElementById('app'), { ix: currentIx });
+  } else if (qnaSbStepIndex >= 2) {
+    finishQuestionnaire();
+  } else {
+    renderQuestionnaire(document.getElementById('app'), { ix: currentIx });
   }
 }
 
 function finishQuestionnaire() {
   const data = {
     interactionType: 'questionnaire',
-    selections: QUESTIONNAIRE_QUESTIONS.map((q, i) => ({
-      question: q.text,
-      answer: qnaSelections[i]
-    }))
+    selections: {
+      visitStyle: [...(qnaSbSelections[0] || [])],
+      aspects: [...(qnaSbSelections[1] || [])],
+      absorbStyle: [...(qnaSbSelections[2] || [])]
+    }
   };
   navigateTo(STATE.RESULT, { data, ix: currentIx });
 }

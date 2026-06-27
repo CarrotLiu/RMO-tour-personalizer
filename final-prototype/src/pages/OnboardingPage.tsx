@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { Fragment, useMemo, useRef, useState } from 'react';
 import type { KeyboardEvent as ReactKeyboardEvent, PointerEvent as ReactPointerEvent, ReactNode } from 'react';
 import { motion, PanInfo, useDragControls } from 'framer-motion';
 import { Check, ChevronLeft, ChevronRight, Globe, Sparkles } from 'lucide-react';
@@ -18,6 +18,7 @@ type StepId = 'museum' | 'exhibition' | 'motivation' | 'aspect' | 'format' | 'pr
 type MuseumOptionId = 'rmo' | 'haarlem';
 type ExhibitionOptionId = 'netherlands' | 'egypt' | 'classical' | 'middle-east';
 type FormatOptionId = VisitorProfile['challengeFormat'];
+type MuseumTutorialStage = 'select' | 'deselect' | 'reselect' | 'complete';
 type AspectOptionId =
   | 'trade'
   | 'power'
@@ -229,7 +230,7 @@ function pointInRect(point: { x: number; y: number }, rect: DOMRect | null) {
 export function OnboardingPage({ onComplete }: { onComplete: (profile: VisitorProfile) => void }) {
   const [step, setStep] = useState<StepId>('museum');
   const [museum, setMuseum] = useState<MuseumId | null>(null);
-  const [museumCompleted, setMuseumCompleted] = useState(false);
+  const [museumTutorialStage, setMuseumTutorialStage] = useState<MuseumTutorialStage>('select');
   const [museumHovering, setMuseumHovering] = useState(false);
   const [museumWrong, setMuseumWrong] = useState(false);
   const [exhibition, setExhibition] = useState('');
@@ -249,6 +250,11 @@ export function OnboardingPage({ onComplete }: { onComplete: (profile: VisitorPr
   const motivationDropRef = useRef<HTMLSpanElement>(null);
   const aspectDropRef = useRef<HTMLSpanElement>(null);
   const formatDropRef = useRef<HTMLSpanElement>(null);
+  const museumCardRef = useRef<HTMLDivElement>(null);
+  const exhibitionCardRef = useRef<HTMLDivElement>(null);
+  const motivationCardRef = useRef<HTMLDivElement>(null);
+  const aspectCardRef = useRef<HTMLDivElement>(null);
+  const formatCardRef = useRef<HTMLDivElement>(null);
 
   const selectedMuseum = useMemo(
     () => museums.find((item) => item.id === museum) ?? null,
@@ -259,23 +265,23 @@ export function OnboardingPage({ onComplete }: { onComplete: (profile: VisitorPr
     [challengeFormat],
   );
   function museumDropRect() {
-    return museumDropRef.current?.getBoundingClientRect() ?? null;
+    return museumCardRef.current?.getBoundingClientRect() ?? museumDropRef.current?.getBoundingClientRect() ?? null;
   }
 
   function exhibitionDropRect() {
-    return exhibitionDropRef.current?.getBoundingClientRect() ?? null;
+    return exhibitionCardRef.current?.getBoundingClientRect() ?? exhibitionDropRef.current?.getBoundingClientRect() ?? null;
   }
 
   function motivationDropRect() {
-    return motivationDropRef.current?.getBoundingClientRect() ?? null;
+    return motivationCardRef.current?.getBoundingClientRect() ?? motivationDropRef.current?.getBoundingClientRect() ?? null;
   }
 
   function aspectDropRect() {
-    return aspectDropRef.current?.getBoundingClientRect() ?? null;
+    return aspectCardRef.current?.getBoundingClientRect() ?? aspectDropRef.current?.getBoundingClientRect() ?? null;
   }
 
   function formatDropRect() {
-    return formatDropRef.current?.getBoundingClientRect() ?? null;
+    return formatCardRef.current?.getBoundingClientRect() ?? formatDropRef.current?.getBoundingClientRect() ?? null;
   }
 
   function chooseMuseum(optionId: MuseumOptionId) {
@@ -287,8 +293,14 @@ export function OnboardingPage({ onComplete }: { onComplete: (profile: VisitorPr
     }
 
     setMuseum(option.id);
-    setMuseumCompleted(true);
+    setMuseumTutorialStage((current) => (current === 'reselect' ? 'complete' : 'deselect'));
     setMuseumHovering(false);
+  }
+
+  function deselectMuseum() {
+    setMuseum(null);
+    setExhibition('');
+    setMuseumTutorialStage((current) => (current === 'complete' || current === 'deselect' ? 'reselect' : current));
   }
 
   function chooseExhibition(optionId: ExhibitionOptionId) {
@@ -495,7 +507,7 @@ startxref
   }
 
   function canContinue() {
-    if (step === 'museum') return Boolean(museum);
+    if (step === 'museum') return Boolean(museum) && museumTutorialStage === 'complete';
     if (step === 'exhibition') return Boolean(exhibition);
     if (step === 'motivation') return motivationsSelected.length > 0;
     if (step === 'aspect') return aspectsSelected.length > 0;
@@ -511,56 +523,59 @@ startxref
     >
       {step === 'museum' ? (
         <>
-          {museumCompleted && (
-            <p className="museum-tutorial-note deselect-note">
-              Click the filled-in option to deselect
-              <span aria-hidden="true">↓</span>
-            </p>
-          )}
           {museumWrong && <p className="museum-unavailable-note">Sorry! This museum is not yet ready...</p>}
 
           <motion.div
-            className={`museum-gap-card ${museumCompleted ? 'is-complete' : ''} ${museumWrong ? 'is-wrong' : ''}`}
+            ref={museumCardRef}
+            className={`prompt-card museum-gap-card ${museum ? 'is-complete' : ''} ${museumWrong ? 'is-wrong' : ''}`}
             animate={museumWrong ? { x: [0, -8, 8, -4, 4, 0] } : {}}
           >
-            <p>
-              <span>I'm traveling to</span>
+            <p className="prompt-sentence">
+              <span>I'm traveling to </span>
               {museum && selectedMuseum ? (
                 <button
-                  className="museum-filled-answer"
-                  onClick={() => {
-                    setMuseum(null);
-                    setMuseumCompleted(false);
-                    setExhibition('');
-                  }}
+                  className="filled-gap"
+                  onClick={deselectMuseum}
                   type="button"
                 >
-                  <span>The National</span>
-                  <span>Museum of Antiques (RMO)</span>
+                  The National Museum of Antiques (RMO)
                 </button>
               ) : (
-                <>
-                  <span
-                    ref={museumDropRef}
-                    className={`museum-gap-drop ${museumHovering ? 'is-hovered' : ''}`}
-                  >
-                    <span className="museum-gap-blank">select a museum</span>
-                  </span>
-                </>
+                <span
+                  ref={museumDropRef}
+                  className={`gap-placeholder ${museumHovering ? 'is-hovered' : ''}`}
+                >
+                  select a museum
+                </span>
               )}
-              <span>to visit</span>
-              <span className="museum-gap-blank museum-exhibition-placeholder" aria-hidden="true">
+              <span> to visit </span>
+              <span className="gap-placeholder museum-exhibition-placeholder" aria-hidden="true">
                 select an exhibition
               </span>
             </p>
             {museumWrong && <div className="museum-wrong-fill">Archeological Museum Haarlem</div>}
           </motion.div>
 
-          {!museumCompleted ? (
+          {museumTutorialStage === 'deselect' && museum && (
+            <p className="museum-tutorial-note deselect-note">
+              Click the filled-in option to deselect
+              <span aria-hidden="true">↑</span>
+            </p>
+          )}
+
+          {museumTutorialStage === 'reselect' && !museum && (
+            <p className="museum-tutorial-note reselect-note">
+              Now that you learn how to select and deselect an option. Select again to continue.
+            </p>
+          )}
+
+          {!museum ? (
             <>
-              <p className="museum-tutorial-note drag-note">
-                Drag the option to the gap to select
-              </p>
+              {museumTutorialStage === 'select' && (
+                <p className="museum-tutorial-note drag-note">
+                  Drag the option to the gap to select
+                </p>
+              )}
               <div className="museum-option-list">
                 <MuseumOptionCard
                   id="rmo"
@@ -582,31 +597,32 @@ startxref
                 />
               </div>
             </>
-          ) : (
+          ) : museumTutorialStage === 'complete' ? (
             <div className="museum-complete-copy">
               <p>Congrats!</p>
               <p>You have learned how to write a journal page!</p>
-              <span>Enjoy your journey ahead!</span>
+              <span>Continue to enjoy your journey ahead.</span>
             </div>
-          )}
+          ) : null}
         </>
       ) : step === 'exhibition' && selectedMuseum ? (
         <>
           <motion.div
-            className={`museum-gap-card exhibition-gap-card ${exhibition ? 'is-complete' : ''} ${
+            ref={exhibitionCardRef}
+            className={`prompt-card museum-gap-card exhibition-gap-card ${exhibition ? 'is-complete' : ''} ${
               exhibitionWrong ? 'is-wrong' : ''
             }`}
             animate={exhibitionWrong ? { x: [0, -8, 8, -4, 4, 0] } : {}}
           >
-            <p>
-              <span>I'm traveling to</span>
-              <span className="museum-filled-answer static-answer">
+            <p className="prompt-sentence">
+              <span>I'm traveling to </span>
+              <span className="filled-gap static-answer">
                 the National Museum of Antiques
               </span>
-              <span>to visit</span>
+              <span> to visit </span>
               {exhibition ? (
                 <button
-                  className="museum-filled-answer exhibition-filled-answer"
+                  className="filled-gap exhibition-filled-answer"
                   onClick={() => setExhibition('')}
                   type="button"
                 >
@@ -615,30 +631,32 @@ startxref
               ) : (
                 <span
                   ref={exhibitionDropRef}
-                  className={`museum-gap-drop exhibition-gap-drop ${
+                  className={`gap-placeholder exhibition-gap-drop ${
                     exhibitionHovering ? 'is-hovered' : ''
                   }`}
                 >
-                  <span className="museum-gap-blank exhibition-blank">select an exhibition</span>
+                  select an exhibition
                 </span>
               )}
             </p>
           </motion.div>
 
           <div className="museum-option-list exhibition-option-list">
-            {exhibitionOptions.map((option) => (
-              <MuseumOptionCard
-                key={option.id}
-                id={option.id}
-                label={option.label}
-                details={option.details}
-                link={option.link}
-                tone={option.tone}
-                getDropRect={exhibitionDropRect}
-                onHoverChange={setExhibitionHovering}
-                onSelect={(id) => chooseExhibition(id as ExhibitionOptionId)}
-              />
-            ))}
+            {exhibitionOptions
+              .filter((option) => option.answerLabel !== exhibition)
+              .map((option) => (
+                <MuseumOptionCard
+                  key={option.id}
+                  id={option.id}
+                  label={option.label}
+                  details={option.details}
+                  link={option.link}
+                  tone={option.tone}
+                  getDropRect={exhibitionDropRect}
+                  onHoverChange={setExhibitionHovering}
+                  onSelect={(id) => chooseExhibition(id as ExhibitionOptionId)}
+                />
+              ))}
           </div>
         </>
       ) : step === 'motivation' ? (
@@ -646,23 +664,22 @@ startxref
           {motivationWrong && <p className="museum-unavailable-note">Select at most 2 motivations!</p>}
 
           <motion.div
-            className={`museum-gap-card motivation-gap-card ${
+            ref={motivationCardRef}
+            className={`prompt-card museum-gap-card motivation-gap-card ${
               motivationsSelected.length > 0 ? 'is-complete' : ''
             } ${motivationWrong ? 'is-wrong' : ''}`}
             animate={motivationWrong ? { x: [0, -8, 8, -4, 4, 0] } : {}}
           >
-            <p>
-              <span>I want to</span>
+            <p className="prompt-sentence">
+              <span>I want to </span>
               {motivationsSelected.length === 0 ? (
                 <span
                   ref={motivationDropRef}
-                  className={`museum-gap-drop motivation-gap-drop ${
+                  className={`gap-placeholder motivation-gap-drop ${
                     motivationHovering ? 'is-hovered' : ''
                   }`}
                 >
-                  <span className="museum-gap-blank motivation-blank">
-                    choose at most two motivations
-                  </span>
+                  choose at most two motivations
                 </span>
               ) : (
                 <>
@@ -670,10 +687,10 @@ startxref
                     const selected = motivations.find((motivationOption) => motivationOption.id === item);
                     if (!selected) return null;
                     return (
-                      <span key={item} className="motivation-answer-group">
-                        {index === 1 && <span>and</span>}
+                      <Fragment key={item}>
+                        {index > 0 && <span> and </span>}
                         <button
-                          className="museum-filled-answer motivation-filled-answer"
+                          className="filled-gap motivation-filled-answer"
                           onClick={() =>
                             setMotivationsSelected((current) =>
                               current.filter((motivationId) => motivationId !== item),
@@ -683,21 +700,19 @@ startxref
                         >
                           {selected.label}
                         </button>
-                      </span>
+                      </Fragment>
                     );
                   })}
                   {motivationsSelected.length === 1 && (
                     <>
-                      <span>and</span>
+                      <span> and </span>
                       <span
                         ref={motivationDropRef}
-                        className={`museum-gap-drop motivation-gap-drop ${
+                        className={`gap-placeholder motivation-gap-drop ${
                           motivationHovering ? 'is-hovered' : ''
                         }`}
                       >
-                        <span className="museum-gap-blank motivation-blank one-more">
-                          choose one more
-                        </span>
+                        choose one more
                       </span>
                     </>
                   )}
@@ -710,7 +725,7 @@ startxref
                   )}
                 </>
               )}
-              <span>in this exhibition about the past of the Netherlands.</span>
+              <span> in this exhibition about the past of the Netherlands.</span>
             </p>
           </motion.div>
 
@@ -736,16 +751,17 @@ startxref
           {aspectWrong && <p className="museum-unavailable-note">Deselect “all the aspect” please!</p>}
 
           <motion.div
-            className={`museum-gap-card aspect-gap-card ${
+            ref={aspectCardRef}
+            className={`prompt-card museum-gap-card aspect-gap-card ${
               aspectsSelected.length > 0 ? 'is-complete' : ''
             } ${aspectWrong ? 'is-wrong' : ''}`}
             animate={aspectWrong ? { x: [0, -8, 8, -4, 4, 0] } : {}}
           >
-            <p>
-              <span>I'm interested in</span>
+            <p className="prompt-sentence">
+              <span>I'm interested in </span>
               {aspectsSelected.includes('all-aspects') ? (
                 <button
-                  className="museum-filled-answer aspect-filled-answer"
+                  className="filled-gap aspect-filled-answer"
                   onClick={() => setAspectsSelected([])}
                   type="button"
                 >
@@ -754,11 +770,9 @@ startxref
               ) : aspectsSelected.length === 0 ? (
                 <span
                   ref={aspectDropRef}
-                  className={`museum-gap-drop aspect-gap-drop ${aspectHovering ? 'is-hovered' : ''}`}
+                  className={`gap-placeholder aspect-gap-drop ${aspectHovering ? 'is-hovered' : ''}`}
                 >
-                  <span className="museum-gap-blank aspect-blank">
-                    choose all the aspects you are interested in
-                  </span>
+                  choose all the aspects you are interested in
                 </span>
               ) : (
                 <>
@@ -766,10 +780,10 @@ startxref
                     const selected = aspectOptions.find((option) => option.id === item);
                     if (!selected) return null;
                     return (
-                      <span key={item} className="aspect-answer-group">
+                      <Fragment key={item}>
                         {index > 0 && <span>{index === aspectsSelected.length - 1 ? ', and' : ','}</span>}
                         <button
-                          className="museum-filled-answer aspect-filled-answer"
+                          className="filled-gap aspect-filled-answer"
                           onClick={() =>
                             setAspectsSelected((current) =>
                               current.filter((aspectId) => aspectId !== item),
@@ -779,7 +793,7 @@ startxref
                         >
                           {selected.answerLabel}
                         </button>
-                      </span>
+                      </Fragment>
                     );
                   })}
                   {aspectsSelected.length < 6 && (
@@ -787,13 +801,11 @@ startxref
                       <span>{aspectsSelected.length === 1 ? 'and' : ', and'}</span>
                       <span
                         ref={aspectDropRef}
-                        className={`museum-gap-drop aspect-gap-drop ${
+                        className={`gap-placeholder aspect-gap-drop ${
                           aspectHovering ? 'is-hovered' : ''
                         }`}
                       >
-                        <span className="museum-gap-blank aspect-blank one-more">
-                          choose more...
-                        </span>
+                        choose more...
                       </span>
                     </>
                   )}
@@ -806,7 +818,7 @@ startxref
                   )}
                 </>
               )}
-              <span>in early Dutch history.</span>
+              <span> in early Dutch history.</span>
             </p>
           </motion.div>
 
@@ -841,17 +853,18 @@ startxref
           )}
 
           <motion.div
-            className={`museum-gap-card format-gap-card ${
+            ref={formatCardRef}
+            className={`prompt-card museum-gap-card format-gap-card ${
               challengeFormat ? 'is-complete' : ''
             } ${formatWrong ? 'is-wrong' : ''}`}
             animate={formatWrong ? { x: [0, -8, 8, -4, 4, 0] } : {}}
           >
-            <p>
-              <span>I enjoy solving treasure hunt challenges by</span>
+            <p className="prompt-sentence">
+              <span>I enjoy solving treasure hunt challenges by </span>
               {selectedFormat ? (
                 <>
                   <button
-                    className="museum-filled-answer format-filled-answer"
+                    className="filled-gap format-filled-answer"
                     onClick={() => setChallengeFormat(null)}
                     type="button"
                   >
@@ -866,11 +879,9 @@ startxref
               ) : (
                 <span
                   ref={formatDropRef}
-                  className={`museum-gap-drop format-gap-drop ${formatHovering ? 'is-hovered' : ''}`}
+                  className={`gap-placeholder format-gap-drop ${formatHovering ? 'is-hovered' : ''}`}
                 >
-                  <span className="museum-gap-blank format-blank">
-                    choose your preferred challenge format
-                  </span>
+                  choose your preferred challenge format
                 </span>
               )}
               <span>.</span>
