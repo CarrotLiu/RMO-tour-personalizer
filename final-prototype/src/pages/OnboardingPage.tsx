@@ -18,7 +18,7 @@ type StepId = 'museum' | 'exhibition' | 'motivation' | 'aspect' | 'format' | 'pr
 type MuseumOptionId = 'rmo' | 'haarlem';
 type ExhibitionOptionId = 'netherlands' | 'egypt' | 'classical' | 'middle-east';
 type FormatOptionId = VisitorProfile['challengeFormat'];
-type MuseumTutorialStage = 'select' | 'deselect' | 'reselect' | 'complete';
+type MuseumTutorialStage = 'tap-detail' | 'tap-back' | 'select' | 'deselect' | 'reselect' | 'complete';
 type AspectOptionId =
   | 'trade'
   | 'power'
@@ -230,7 +230,7 @@ function pointInRect(point: { x: number; y: number }, rect: DOMRect | null) {
 export function OnboardingPage({ onComplete }: { onComplete: (profile: VisitorProfile) => void }) {
   const [step, setStep] = useState<StepId>('museum');
   const [museum, setMuseum] = useState<MuseumId | null>(null);
-  const [museumTutorialStage, setMuseumTutorialStage] = useState<MuseumTutorialStage>('select');
+  const [museumTutorialStage, setMuseumTutorialStage] = useState<MuseumTutorialStage>('tap-detail');
   const [museumHovering, setMuseumHovering] = useState(false);
   const [museumWrong, setMuseumWrong] = useState(false);
   const [exhibition, setExhibition] = useState('');
@@ -264,6 +264,8 @@ export function OnboardingPage({ onComplete }: { onComplete: (profile: VisitorPr
     () => formats.find((item) => item.id === challengeFormat) ?? null,
     [challengeFormat],
   );
+  const shouldShowAspectProfiling = motivationsSelected.includes('knowledge');
+
   function museumDropRect() {
     return museumCardRef.current?.getBoundingClientRect() ?? museumDropRef.current?.getBoundingClientRect() ?? null;
   }
@@ -285,6 +287,8 @@ export function OnboardingPage({ onComplete }: { onComplete: (profile: VisitorPr
   }
 
   function chooseMuseum(optionId: MuseumOptionId) {
+    if (museumTutorialStage !== 'select' && museumTutorialStage !== 'reselect') return;
+
     const option = museums.find((item) => item.id === optionId);
     if (!option?.available) {
       setMuseumWrong(true);
@@ -295,6 +299,16 @@ export function OnboardingPage({ onComplete }: { onComplete: (profile: VisitorPr
     setMuseum(option.id);
     setMuseumTutorialStage((current) => (current === 'reselect' ? 'complete' : 'deselect'));
     setMuseumHovering(false);
+  }
+
+  function handleMuseumOptionFlip(optionId: SelectableOptionId, flipped: boolean) {
+    if (optionId !== 'rmo') return;
+    if (museumTutorialStage === 'tap-detail' && flipped) {
+      setMuseumTutorialStage('tap-back');
+    }
+    if (museumTutorialStage === 'tap-back' && !flipped) {
+      setMuseumTutorialStage('select');
+    }
   }
 
   function deselectMuseum() {
@@ -325,6 +339,16 @@ export function OnboardingPage({ onComplete }: { onComplete: (profile: VisitorPr
       }
       setMotivationHovering(false);
       return [...current, optionId];
+    });
+  }
+
+  function deselectMotivation(optionId: MotivationId) {
+    setMotivationsSelected((current) => {
+      const next = current.filter((motivationId) => motivationId !== optionId);
+      if (!next.includes('knowledge')) {
+        setAspectsSelected([]);
+      }
+      return next;
     });
   }
 
@@ -373,9 +397,11 @@ export function OnboardingPage({ onComplete }: { onComplete: (profile: VisitorPr
       museum,
       exhibition,
       motivation: motivationsSelected,
-      aspect: aspectsSelected.map(
-        (item) => aspectOptions.find((option) => option.id === item)?.answerLabel ?? item,
-      ),
+      aspect: shouldShowAspectProfiling
+        ? aspectsSelected.map(
+            (item) => aspectOptions.find((option) => option.id === item)?.answerLabel ?? item,
+          )
+        : undefined,
       challengeFormat,
     };
   }
@@ -467,7 +493,7 @@ startxref
       return;
     }
     if (step === 'format') {
-      setStep('aspect');
+      setStep(shouldShowAspectProfiling ? 'aspect' : 'motivation');
       return;
     }
     if (step === 'aspect') {
@@ -494,7 +520,7 @@ startxref
       return;
     }
     if (step === 'motivation' && motivationsSelected.length > 0) {
-      setStep('aspect');
+      setStep(shouldShowAspectProfiling ? 'aspect' : 'format');
       return;
     }
     if (step === 'aspect' && aspectsSelected.length > 0) {
@@ -515,6 +541,20 @@ startxref
     return Boolean(challengeFormat);
   }
 
+  const isMuseumDragTutorial = step === 'museum' && !museum && (
+    museumTutorialStage === 'select' || museumTutorialStage === 'reselect'
+  );
+  const isMuseumTapTutorial = step === 'museum' && !museum && (
+    museumTutorialStage === 'tap-detail' || museumTutorialStage === 'tap-back'
+  );
+  const shouldHighlightMuseumOption =
+    step === 'museum' &&
+    !museum &&
+    (museumTutorialStage === 'tap-detail' ||
+      museumTutorialStage === 'tap-back' ||
+      museumTutorialStage === 'select' ||
+      museumTutorialStage === 'reselect');
+
   return (
     <div
       className={`onboarding-page profiling-page ${
@@ -527,14 +567,16 @@ startxref
 
           <motion.div
             ref={museumCardRef}
-            className={`prompt-card museum-gap-card ${museum ? 'is-complete' : ''} ${museumWrong ? 'is-wrong' : ''}`}
+            className={`prompt-card museum-gap-card ${museum ? 'is-complete' : ''} ${museumWrong ? 'is-wrong' : ''} ${
+              isMuseumDragTutorial ? 'tutorial-glow' : ''
+            }`}
             animate={museumWrong ? { x: [0, -8, 8, -4, 4, 0] } : {}}
           >
             <p className="prompt-sentence">
               <span>I'm traveling to </span>
               {museum && selectedMuseum ? (
                 <button
-                  className="filled-gap"
+                  className={`filled-gap ${museumTutorialStage === 'deselect' ? 'tutorial-glow-inline' : ''}`}
                   onClick={deselectMuseum}
                   type="button"
                 >
@@ -571,6 +613,16 @@ startxref
 
           {!museum ? (
             <>
+              {museumTutorialStage === 'tap-detail' && (
+                <p className="museum-tutorial-note tap-note">
+                  Tap an option to see its detailed description
+                </p>
+              )}
+              {museumTutorialStage === 'tap-back' && (
+                <p className="museum-tutorial-note tap-note">
+                  You can tap again to go back to the option
+                </p>
+              )}
               {museumTutorialStage === 'select' && (
                 <p className="museum-tutorial-note drag-note">
                   Drag the option to the gap to select
@@ -586,6 +638,9 @@ startxref
                   getDropRect={museumDropRect}
                   onHoverChange={setMuseumHovering}
                   onSelect={(id) => chooseMuseum(id as MuseumOptionId)}
+                  onFlipChange={handleMuseumOptionFlip}
+                  dragEnabled={!isMuseumTapTutorial}
+                  highlighted={shouldHighlightMuseumOption}
                 />
                 <MuseumOptionCard
                   id="haarlem"
@@ -594,6 +649,7 @@ startxref
                   getDropRect={museumDropRect}
                   onHoverChange={setMuseumHovering}
                   onSelect={(id) => chooseMuseum(id as MuseumOptionId)}
+                  dragEnabled={!isMuseumTapTutorial}
                 />
               </div>
             </>
@@ -601,7 +657,6 @@ startxref
             <div className="museum-complete-copy">
               <p>Congrats!</p>
               <p>You have learned how to write a journal page!</p>
-              <span>Continue to enjoy your journey ahead.</span>
             </div>
           ) : null}
         </>
@@ -691,11 +746,7 @@ startxref
                         {index > 0 && <span> and </span>}
                         <button
                           className="filled-gap motivation-filled-answer"
-                          onClick={() =>
-                            setMotivationsSelected((current) =>
-                              current.filter((motivationId) => motivationId !== item),
-                            )
-                          }
+                          onClick={() => deselectMotivation(item)}
                           type="button"
                         >
                           {selected.label}
@@ -930,15 +981,22 @@ startxref
           >
             <ChevronLeft size={22} />
           </button>
-          <button
-            className="profiling-arrow"
-            disabled={!canContinue()}
-            onClick={goNext}
-            type="button"
-            aria-label="Next profiling step"
-          >
-            <ChevronRight size={22} />
-          </button>
+          <div className="profiling-next-group">
+            {step === 'museum' && museumTutorialStage === 'complete' && (
+              <span className="profiling-next-note">Continue to enjoy your journey ahead.</span>
+            )}
+            <button
+              className={`profiling-arrow ${
+                step === 'museum' && museumTutorialStage === 'complete' ? 'tutorial-glow-control' : ''
+              }`}
+              disabled={!canContinue()}
+              onClick={goNext}
+              type="button"
+              aria-label="Next profiling step"
+            >
+              <ChevronRight size={22} />
+            </button>
+          </div>
         </div>
       )}
     </div>
@@ -955,6 +1013,9 @@ function MuseumOptionCard({
   getDropRect,
   onHoverChange,
   onSelect,
+  onFlipChange,
+  dragEnabled = true,
+  highlighted = false,
 }: {
   id: SelectableOptionId;
   label: string;
@@ -965,6 +1026,9 @@ function MuseumOptionCard({
   getDropRect: () => DOMRect | null;
   onHoverChange: (isHovering: boolean) => void;
   onSelect: (id: SelectableOptionId) => void;
+  onFlipChange?: (id: SelectableOptionId, flipped: boolean) => void;
+  dragEnabled?: boolean;
+  highlighted?: boolean;
 }) {
   const dragControls = useDragControls();
   const timer = useRef<number | null>(null);
@@ -975,6 +1039,7 @@ function MuseumOptionCard({
   const [dragReady, setDragReady] = useState(false);
 
   function startHold(event: ReactPointerEvent<HTMLDivElement>) {
+    if (!dragEnabled) return;
     event.preventDefault();
     const pointerEvent = event.nativeEvent;
     isPointerDown.current = true;
@@ -1004,16 +1069,22 @@ function MuseumOptionCard({
       return;
     }
     if (!details) return;
-    setFlipped((value) => !value);
+    setFlipped((value) => {
+      const next = !value;
+      onFlipChange?.(id, next);
+      return next;
+    });
   }
 
   function handleDrag(_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) {
+    if (!dragEnabled) return;
     isDraggingRef.current = true;
     setDragReady(false);
     onHoverChange(pointInRect(info.point, getDropRect()));
   }
 
   function handleDragEnd(_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) {
+    if (!dragEnabled) return;
     const dropped = pointInRect(info.point, getDropRect());
     isPointerDown.current = false;
     isDraggingRef.current = false;
@@ -1032,8 +1103,8 @@ function MuseumOptionCard({
     <motion.div
       className={`museum-option-card ${tone} ${flipped ? 'is-flipped' : ''} ${
         dragReady ? 'is-drag-ready' : ''
-      }`}
-      drag
+      } ${highlighted ? 'tutorial-glow' : ''}`}
+      drag={dragEnabled}
       dragControls={dragControls}
       dragListener={false}
       dragMomentum={false}
