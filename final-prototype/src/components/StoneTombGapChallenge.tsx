@@ -55,6 +55,15 @@ function pointInRect(point: { x: number; y: number }, rect: DOMRect) {
   return point.x >= rect.left && point.x <= rect.right && point.y >= rect.top && point.y <= rect.bottom;
 }
 
+function expandRect(rect: DOMRect, padding: number) {
+  return new DOMRect(
+    rect.left - padding,
+    rect.top - padding,
+    rect.width + padding * 2,
+    rect.height + padding * 2,
+  );
+}
+
 export function StoneTombGapChallenge({
   challenge,
   onComplete,
@@ -71,7 +80,10 @@ export function StoneTombGapChallenge({
   function targetAtPoint(point: { x: number; y: number }) {
     return targets.find((target) => {
       const element = targetRefs.current[target.id];
-      return element ? pointInRect(point, element.getBoundingClientRect()) : false;
+      if (!element) return false;
+      const rect = element.getBoundingClientRect();
+      const padding = Math.max(18, rect.width * 0.45);
+      return pointInRect(point, expandRect(rect, padding));
     });
   }
 

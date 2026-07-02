@@ -23,6 +23,13 @@ type PictureCheckingSetting = {
   updatedAt?: number;
 };
 
+type ChallengeUnlockSetting = {
+  challengeMapUnlocked?: boolean;
+  challengeMapUpdatedAt?: number;
+};
+
+type ControlSettings = PictureCheckingSetting & ChallengeUnlockSetting;
+
 function getSearchParams() {
   return new URLSearchParams(window.location.search);
 }
@@ -70,6 +77,31 @@ export async function getPictureCheckingEnabled(): Promise<boolean> {
   return isFreshEnabledSetting(readLocalCheckingSetting(session));
 }
 
+export async function getChallengeMapUnlocked(): Promise<boolean> {
+  const server = getJudgeServer();
+  const session = getJudgeSession();
+
+  if (server) {
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), SETTINGS_TIMEOUT_MS);
+
+    try {
+      const response = await fetch(`${server}/settings?session=${encodeURIComponent(session)}`, {
+        cache: 'no-store',
+        signal: controller.signal,
+      });
+      const data = (await response.json()) as ChallengeUnlockSetting;
+      return Boolean(data.challengeMapUnlocked);
+    } catch {
+      return readLocalChallengeUnlockSetting(session);
+    } finally {
+      window.clearTimeout(timeout);
+    }
+  }
+
+  return readLocalChallengeUnlockSetting(session);
+}
+
 export async function setPictureCheckingEnabled(enabled: boolean) {
   const server = getJudgeServer();
   const session = getJudgeSession();
@@ -92,6 +124,56 @@ export async function setPictureCheckingEnabled(enabled: boolean) {
   const channel = createRecognitionChannel();
   channel.postMessage({ type: 'settings', session, ...setting });
   channel.close();
+}
+
+export async function setChallengeMapUnlocked(unlocked: boolean) {
+  const server = getJudgeServer();
+  const session = getJudgeSession();
+  const setting: ChallengeUnlockSetting = {
+    challengeMapUnlocked: unlocked,
+    challengeMapUpdatedAt: Date.now(),
+  };
+
+  localStorage.setItem(`challengeMapUnlocked:${session}`, JSON.stringify(setting));
+
+  if (server) {
+    await fetch(`${server}/settings`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ session, ...setting }),
+    });
+    return;
+  }
+
+  const channel = createRecognitionChannel();
+  channel.postMessage({ type: 'settings', session, ...setting });
+  channel.close();
+}
+
+export function subscribeToControlSettings(onSettings: (settings: ControlSettings) => void) {
+  const server = getJudgeServer();
+  const session = getJudgeSession();
+
+  if (server) {
+    const events = new EventSource(`${server}/events?session=${encodeURIComponent(session)}`);
+
+    events.addEventListener('settings', (event) => {
+      onSettings(JSON.parse((event as MessageEvent).data) as ControlSettings);
+    });
+
+    return () => events.close();
+  }
+
+  const channel = createRecognitionChannel();
+
+  channel.addEventListener('message', (event) => {
+    const data = event.data as ControlSettings & { type?: string; session?: string };
+    if (data.type === 'settings' && data.session === session) {
+      onSettings(data);
+    }
+  });
+
+  return () => channel.close();
 }
 
 export async function requestRecognitionDecision(
@@ -209,5 +291,16 @@ function readLocalCheckingSetting(session: string): PictureCheckingSetting | nul
     return JSON.parse(raw) as PictureCheckingSetting;
   } catch {
     return null;
+  }
+}
+
+function readLocalChallengeUnlockSetting(session: string) {
+  const raw = localStorage.getItem(`challengeMapUnlocked:${session}`);
+  if (!raw) return false;
+
+  try {
+    return Boolean((JSON.parse(raw) as ChallengeUnlockSetting).challengeMapUnlocked);
+  } catch {
+    return false;
   }
 }

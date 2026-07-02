@@ -100,6 +100,8 @@ const server = http.createServer(async (req, res) => {
       JSON.stringify({
         pictureCheckingEnabled: Boolean(sessionSettings?.pictureCheckingEnabled),
         updatedAt: sessionSettings?.updatedAt,
+        challengeMapUnlocked: Boolean(sessionSettings?.challengeMapUnlocked),
+        challengeMapUpdatedAt: sessionSettings?.challengeMapUpdatedAt,
       }),
     );
     return;
@@ -108,10 +110,20 @@ const server = http.createServer(async (req, res) => {
   if (req.method === 'POST' && url.pathname === '/settings') {
     const body = await readJson(req);
     const session = body.session || 'field-journal';
-    settings.set(session, {
-      pictureCheckingEnabled: Boolean(body.pictureCheckingEnabled),
-      updatedAt: Number(body.updatedAt) || Date.now(),
-    });
+    const current = settings.get(session) ?? {};
+    const next = { ...current };
+
+    if ('pictureCheckingEnabled' in body) {
+      next.pictureCheckingEnabled = Boolean(body.pictureCheckingEnabled);
+      next.updatedAt = Number(body.updatedAt) || Date.now();
+    }
+
+    if ('challengeMapUnlocked' in body) {
+      next.challengeMapUnlocked = Boolean(body.challengeMapUnlocked);
+      next.challengeMapUpdatedAt = Number(body.challengeMapUpdatedAt) || Date.now();
+    }
+
+    settings.set(session, next);
     broadcast(session, 'settings', settings.get(session));
     res.writeHead(204);
     res.end();

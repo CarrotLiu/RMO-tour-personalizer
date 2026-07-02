@@ -64,6 +64,9 @@ export async function saveVisitorProfile(sessionId: string, profile: VisitorProf
     target,
     {
       profile,
+      motivationTypes: profile.motivation,
+      aspectTypes: profile.aspect ?? [],
+      challengeFormatType: profile.challengeFormat,
       updatedAt: serverTimestamp(),
     },
     { merge: true },

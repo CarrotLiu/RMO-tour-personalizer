@@ -3,11 +3,13 @@ import { Check, X } from 'lucide-react';
 import {
   createRecognitionChannel,
   DirectionHint,
+  getChallengeMapUnlocked,
   getPictureCheckingEnabled,
   getJudgeServer,
   getJudgeSession,
   RecognitionRequest,
   sendRecognitionDecision,
+  setChallengeMapUnlocked,
   setPictureCheckingEnabled,
 } from '../app/recognitionRelay';
 
@@ -15,6 +17,7 @@ export function JudgePage() {
   const [request, setRequest] = useState<RecognitionRequest | null>(null);
   const [lastDecision, setLastDecision] = useState<string | null>(null);
   const [checkingEnabled, setCheckingEnabled] = useState(false);
+  const [mapUnlocked, setMapUnlocked] = useState(false);
   const server = getJudgeServer();
   const session = getJudgeSession();
 
@@ -22,9 +25,10 @@ export function JudgePage() {
     let cancelled = false;
 
     async function loadSettings() {
-      const enabled = await getPictureCheckingEnabled();
+      const [enabled, unlocked] = await Promise.all([getPictureCheckingEnabled(), getChallengeMapUnlocked()]);
       if (!cancelled) {
         setCheckingEnabled(enabled);
+        setMapUnlocked(unlocked);
       }
     }
 
@@ -76,6 +80,12 @@ export function JudgePage() {
     setLastDecision(enabled ? 'Picture checking enabled' : 'Picture checking disabled');
   }
 
+  async function updateMapUnlocked(unlocked: boolean) {
+    setMapUnlocked(unlocked);
+    await setChallengeMapUnlocked(unlocked);
+    setLastDecision(unlocked ? 'Challenge map unlocked' : 'Challenge map locked');
+  }
+
   async function markCorrect() {
     if (!request) return;
 
@@ -98,6 +108,18 @@ export function JudgePage() {
         <p className="judge-kicker">Artifact recognition control</p>
         <h1>{request ? request.challengeTitle : 'Waiting for photo submit'}</h1>
         <p className="judge-session">Session: {session}</p>
+
+        <label className="judge-toggle">
+          <input
+            type="checkbox"
+            checked={mapUnlocked}
+            onChange={(event) => updateMapUnlocked(event.currentTarget.checked)}
+          />
+          <span>
+            <strong>Challenge map</strong>
+            <em>{mapUnlocked ? 'Unlocked for visitors' : 'Locked until museum arrival'}</em>
+          </span>
+        </label>
 
         <label className="judge-toggle">
           <input

@@ -7,6 +7,7 @@ import { MapPage } from '../pages/MapPage';
 import { CollectionPage } from '../pages/CollectionPage';
 import { ChallengePage } from '../pages/ChallengePage';
 import { JudgePage } from '../pages/JudgePage';
+import { LockedChallengePage } from '../pages/LockedChallengePage';
 import { RegistrationPage } from '../pages/RegistrationPage';
 import { OnboardingPage, VisitorProfile } from '../pages/OnboardingPage';
 import { bindStableAppHeight, setStableAppHeight } from './viewportHeight';
@@ -15,8 +16,13 @@ import {
   saveVisitorProfile,
   saveVisitorRegistration,
 } from './firebaseJournal';
+import {
+  getChallengeMapUnlocked,
+  setChallengeMapUnlocked as publishChallengeMapUnlocked,
+  subscribeToControlSettings,
+} from './recognitionRelay';
 
-type Screen = 'register' | 'onboarding' | 'home' | 'map' | 'collection' | 'challenge';
+type Screen = 'register' | 'onboarding' | 'home' | 'locked' | 'map' | 'collection' | 'challenge';
 
 function createSessionId() {
   return crypto.randomUUID?.() ?? `visitor-${Date.now()}-${Math.random().toString(36).slice(2)}`;
@@ -47,6 +53,7 @@ export default function App() {
   const [mapIndex, setMapIndex] = useState(0);
   const [completed, setCompleted] = useState<string[]>([]);
   const [completionRecords, setCompletionRecords] = useState<Record<string, ChallengeCompletionRecord>>({});
+  const [challengeMapUnlocked, setChallengeMapUnlocked] = useState(false);
 
   const activeChallenge = challenges[activeIndex];
   const isMapScreen = screen === 'map';
@@ -66,6 +73,31 @@ export default function App() {
 
   useEffect(() => {
     return bindStableAppHeight();
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    getChallengeMapUnlocked().then((unlockedSetting) => {
+      if (cancelled) return;
+      setChallengeMapUnlocked(unlockedSetting);
+      if (unlockedSetting) {
+        setScreen((current) => (current === 'locked' ? 'map' : current));
+      }
+    });
+
+    const unsubscribe = subscribeToControlSettings((settings) => {
+      if (typeof settings.challengeMapUnlocked !== 'boolean') return;
+      setChallengeMapUnlocked(settings.challengeMapUnlocked);
+      if (settings.challengeMapUnlocked) {
+        setScreen((current) => (current === 'locked' ? 'map' : current));
+      }
+    });
+
+    return () => {
+      cancelled = true;
+      unsubscribe();
+    };
   }, []);
 
   function openChallenge(challenge: Challenge) {
@@ -95,10 +127,18 @@ export default function App() {
 
   function completeOnboarding(profile: VisitorProfile) {
     setVisitorProfile(profile);
+    setChallengeMapUnlocked(false);
+    void publishChallengeMapUnlocked(false).catch((error) => {
+      console.warn('Unable to lock challenge map setting.', error);
+    });
     void saveVisitorProfile(visitorSessionId, profile).catch((error) => {
       console.warn('Unable to save visitor profile to Firebase.', error);
     });
     setScreen('home');
+  }
+
+  function openMapWhenReady() {
+    setScreen(challengeMapUnlocked ? 'map' : 'locked');
   }
 
   return (
@@ -108,7 +148,12 @@ export default function App() {
           screen === 'register' || screen === 'onboarding' ? 'register-mode' : ''
         } ${screen === 'home' ? 'home-mode' : ''} ${isChallengeScreen ? 'challenge-mode' : ''}`}
       >
-        {!isMapScreen && !isChallengeScreen && screen !== 'home' && screen !== 'register' && screen !== 'onboarding' && (
+        {!isMapScreen &&
+          !isChallengeScreen &&
+          screen !== 'home' &&
+          screen !== 'register' &&
+          screen !== 'onboarding' &&
+          screen !== 'locked' && (
           <header className="top-bar">
             <button
               className="icon-button"
@@ -140,10 +185,11 @@ export default function App() {
               <HomePage
                 visitorName={visitorName}
                 unlocked={unlocked}
-                onStart={() => setScreen('map')}
+                onStart={openMapWhenReady}
                 onCollection={() => setScreen('collection')}
               />
             )}
+            {screen === 'locked' && <LockedChallengePage onBack={() => setScreen('home')} />}
             {screen === 'map' && (
               <MapPage
                 challenges={mapChallenges}

@@ -79,10 +79,11 @@ export function HomePage({
               style={{ '--active-bg': `url(${activeChallengeBackground})` } as CSSProperties}
               type="button"
             >
+              <img className="active-challenge-photo" src={activeChallengeBackground} alt="" aria-hidden="true" />
               <span className="active-challenge-copy">
-                Explore the Archeology of
+                Explore the Archeology
                 <br />
-                the Netherlands,
+                <span className="active-copy-nowrap">of the Netherlands,</span>
                 <br />
                 complete journal pages
                 <br />

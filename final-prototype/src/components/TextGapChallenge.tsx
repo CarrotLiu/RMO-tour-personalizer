@@ -18,7 +18,7 @@ export function TextGapChallenge({
   challenge: Challenge;
   onComplete: () => void;
 }) {
-  const dropTargetRef = useRef<HTMLSpanElement>(null);
+  const dropTargetRef = useRef<HTMLDivElement>(null);
   const [status, setStatus] = useState<TextGapStatus>('idle');
   const [answer, setAnswer] = useState<string | null>(null);
   const promptParts = useMemo(() => splitPrompt(challenge.prompt), [challenge.prompt]);
@@ -42,6 +42,7 @@ export function TextGapChallenge({
   return (
     <div className="text-gap-page">
       <motion.div
+        ref={dropTargetRef}
         className={`text-gap-card ${status}`}
         animate={status === 'wrong' ? { x: [0, -8, 8, -4, 4, 0] } : {}}
       >
@@ -58,7 +59,6 @@ export function TextGapChallenge({
             </motion.span>
           ) : (
             <span
-              ref={dropTargetRef}
               className={`text-gap-blank ${status === 'hover' ? 'is-hovered' : ''} ${
                 status === 'wrong' ? 'is-wrong' : ''
               }`}
