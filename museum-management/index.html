@@ -7,18 +7,25 @@
   </head>
   <body>
     <div id="root"></div>
-    <script type="module">
+    <script>
       const isDevServer = ['localhost', '127.0.0.1', '0.0.0.0'].includes(window.location.hostname);
 
+      const loadModule = (src) => {
+        const app = document.createElement('script');
+        app.type = 'module';
+        app.src = src;
+        document.body.appendChild(app);
+      };
+
       if (isDevServer) {
-        import('/src/main.tsx');
+        loadModule('/src/main.tsx');
       } else {
         const styles = document.createElement('link');
         styles.rel = 'stylesheet';
-        styles.href = './dist/assets/index-BaD34YWS.css';
+        styles.href = './dist/assets/app-BaD34YWS.css';
         document.head.appendChild(styles);
 
-        import('./dist/assets/index-fOndDEeE.js');
+        loadModule('./dist/assets/app-Cpyr0I2W.js');
       }
     </script>
   </body>

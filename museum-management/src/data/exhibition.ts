@@ -6,7 +6,13 @@ import type {
   ExhibitionIntro,
 } from '../types/models';
 
-const asset = (path: string) => `${import.meta.env.BASE_URL}assets/${path}`;
+const asset = (path: string) => {
+  if (import.meta.env.DEV) {
+    return `${import.meta.env.BASE_URL}assets/${path}`;
+  }
+
+  return new URL('../assets/' + path, import.meta.url).href;
+};
 
 export const initialIntro: ExhibitionIntro = {
   museumName: 'Rijksmuseum van Oudheden',
@@ -23,43 +29,43 @@ export const initialAspects: AspectType[] = [
   {
     id: 'rituals-beliefs',
     name: 'Rituals & Beliefs',
-    image: asset('aspects/rituals&beliefs.png'),
+    image: asset('aspects/rituals-beliefs.png'),
     description: 'Burial customs, offerings, and the sacred.',
   },
   {
     id: 'technology-craftsmanship',
     name: 'Technology & Craftsmanship',
-    image: asset('aspects/technology&craftsmanship.png'),
+    image: asset('aspects/technology-craftsmanship.png'),
     description: 'How things were made, tools, and skill.',
   },
   {
     id: 'trade-exchange',
     name: 'Trade & Exchange',
-    image: asset('aspects/trade&exchange.png'),
+    image: asset('aspects/trade-exchange.png'),
     description: 'Objects that travelled, money, and contact.',
   },
   {
     id: 'fashion-identity',
     name: 'Fashion & Identity',
-    image: asset('aspects/fashion&identity.png'),
+    image: asset('aspects/fashion-identity.png'),
     description: 'Dress, jewellery, and showing who you are.',
   },
   {
     id: 'power-authority',
     name: 'Power & Authority',
-    image: asset('aspects/power&authority.png'),
+    image: asset('aspects/power-authority.png'),
     description: 'Status, rulers, weapons, and prestige.',
   },
   {
     id: 'social-dailylife',
     name: 'Social & Daily Life',
-    image: asset('aspects/social&dailylife.png'),
+    image: asset('aspects/social-dailylife.png'),
     description: 'Everyday routines, homes, and community.',
   },
   {
     id: 'survival-farming',
     name: 'Survival & Farming',
-    image: asset('aspects/survival&farming.png'),
+    image: asset('aspects/survival-farming.png'),
     description: 'Food, farming, and living off the land.',
   },
 ];
@@ -78,7 +84,7 @@ export const initialArtifacts: ArtifactEntry[] = [
     time: '5300–4900 BC',
     labelText:
       'The first farmers of the Netherlands made these pots by hand, long before the potter’s wheel. Bands of dots and lines were pressed into the wet clay before firing, which is why archaeologists call them the Linear Pottery culture. The pots were used for cooking and for storing grain.',
-    photo: asset('aspects/survival&farming.png'),
+    photo: asset('aspects/survival-farming.png'),
     ...artifactAssets('pottery'),
   },
   {
@@ -96,7 +102,7 @@ export const initialArtifacts: ArtifactEntry[] = [
     time: '1500–1350 BC',
     labelText:
       'This oversized bronze sword is too large and heavy to fight with, and its edge was never sharpened. It was made for ceremony and deliberately placed in a bog as an offering. Before its significance was recognized, a smaller sword of the same family hung on a bedroom wall as decoration.',
-    photo: asset('aspects/power&authority.png'),
+    photo: asset('aspects/power-authority.png'),
     ...artifactAssets('ommerschans-sword'),
   },
   {
@@ -105,7 +111,7 @@ export const initialArtifacts: ArtifactEntry[] = [
     time: '7th century AD',
     labelText:
       'Gold coins minted in faraway Byzantium ended up in Frisian terp mounds. Small holes and loops show that they were not spent as money: Frisian kings and elites wore them as jewellery. A golden emperor on your chest told everyone about your wealth and connections.',
-    photo: asset('aspects/trade&exchange.png'),
+    photo: asset('aspects/trade-exchange.png'),
     ...artifactAssets('byzantine-coin'),
   },
   {
@@ -114,7 +120,7 @@ export const initialArtifacts: ArtifactEntry[] = [
     time: '9th century AD',
     labelText:
       'This golden brooch, set with gemstones and enamel, was found at the bottom of a well in Dorestad, the largest trading town of the Low Countries. The overlapping crosses mark its owner as Christian. Perhaps it was hidden in the well when Viking raiders threatened the town.',
-    photo: asset('aspects/fashion&identity.png'),
+    photo: asset('aspects/fashion-identity.png'),
     ...artifactAssets('dorestad-brooch'),
   },
   {
@@ -123,7 +129,7 @@ export const initialArtifacts: ArtifactEntry[] = [
     time: '14th–16th century',
     labelText:
       'Several people were buried, one after another, in this rectangular stone tomb. Objects were placed on the body with care: a padlock on the face, a crucifix on the chest, a ring on the finger, and a coin on the pelvis. Each object protected or accompanied the dead in its own way.',
-    photo: asset('aspects/rituals&beliefs.png'),
+    photo: asset('aspects/rituals-beliefs.png'),
     ...artifactAssets('stone-tomb'),
   },
 ];
