@@ -7,6 +7,19 @@
   </head>
   <body>
     <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
+    <script type="module">
+      const isDevServer = ['localhost', '127.0.0.1', '0.0.0.0'].includes(window.location.hostname);
+
+      if (isDevServer) {
+        import('/src/main.tsx');
+      } else {
+        const styles = document.createElement('link');
+        styles.rel = 'stylesheet';
+        styles.href = './dist/assets/index-BaD34YWS.css';
+        document.head.appendChild(styles);
+
+        import('./dist/assets/index-fOndDEeE.js');
+      }
+    </script>
   </body>
 </html>
